@@ -23,16 +23,20 @@ import java.util.stream.Collectors
   }
 
   @main def euler107 = {
-    var row = 0
-    val data = Array.ofDim[Option[Int]](40, 40)
-    Files
-      .lines(File("resource/network.txt").toPath)
-      .forEach(line => {
-        line.split(',').zipWithIndex.foreach {
-          case (col, i) =>
-            data(i)(row) = if (col=="-") None else Some(col.toInt)
-        }
-        row += 1
-      })
-    data
+
+    val originalNetwork = {
+      var row = 0
+      val data = Array.ofDim[Option[Int]](40, 40)
+      Files
+        .lines(File("resource/network.txt").toPath)
+        .forEach(line => {
+          line.split(',').zipWithIndex.foreach {
+            case (col, i) =>
+              data(i)(row) = if (col=="-") None else Some(col.toInt)
+          }
+          row += 1
+        })
+      data.map(_.toVector).toVector
+    }
+    println(originalNetwork)
 }
