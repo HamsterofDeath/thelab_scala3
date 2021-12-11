@@ -52,7 +52,7 @@ import scala.collection.mutable.ArrayBuffer
           .zipWithIndex
           .filter(_._1.isDefined)
           .filter(e => stillOpen(e._2))
-          .map { case (Some(value), where) => (value, where) }
+          .map {  (value, where) => (value.get, where) }
           .minByOption(_._1)
           .map { shortest =>
             Connection(i, shortest._2, shortest._1)
