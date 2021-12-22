@@ -7,11 +7,7 @@ import java.util.stream.Collectors
 import collection.JavaConverters._
 
 def input:List[(String, Int)] = {
-  Files
-    .lines(File("resource/advent2").toPath)
-    .collect(Collectors.toList)
-    .asScala
-    .toList
+    Utils.loadFile(2)
     .map(_.split(' '))
     .map {
       case Array(command, value) => (command, value.toInt)
