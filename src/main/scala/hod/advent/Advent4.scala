@@ -5,28 +5,18 @@ import java.beans.BeanInfo
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
-def data4: List[String] = {
-  Utils.loadFile(4, false)
-}
+def data4: List[String] = Utils.loadFile(4, false)
 
 class Bingo(numbers: IndexedSeq[IndexedSeq[Int]]) {
-  require(numbers.size == 5)
-  numbers.foreach { check =>
-    require(check.size == 5)
-  }
-
   private val setsOfFive           = {
-    (Range(0, 5).map { row =>
-      numbers(row)
-    } ++ Range(0, 5).map { row =>
-      Range(0, 5).map { col =>
-        numbers(col)(row)
-      }
-    }).map(mutable.HashSet.empty ++= _)
+    val rows = Range(0, 5).map(numbers(_))
+    val cols = Range(0, 5).map { row =>
+      Range(0, 5).map(col => numbers(col)(row))
+
+    }
+    (rows ++ cols).map(mutable.HashSet.empty ++= _)
   }
-  private val originalPerSetOfFive = {
-    setsOfFive.map(_.toSet)
-  }
+  private val originalPerSetOfFive = setsOfFive.map(_.toSet)
   private val fed                  = ArrayBuffer.empty[Int]
 
   def fedCount = fed.size
@@ -35,27 +25,15 @@ class Bingo(numbers: IndexedSeq[IndexedSeq[Int]]) {
     setsOfFive.foreach(_.remove(in))
     this
   }
-  private var winnerScoreCache = Option.empty[Int]
-  def winnerScore: Option[Int] = {
-    winnerScoreCache match {
-      case full@Some(value) => full
-      case None => winnerScoreCache = {
-        setsOfFive.indexWhere(_.isEmpty) match {
-          case -1 => None
-          case n =>
-            fed.lastOption.map { lastFed =>
-              val unmarked = originalPerSetOfFive.flatten.toSet -- fed
-              unmarked.sum * lastFed
-            }
+  def winnerScore: Option[Int] =
+    setsOfFive.indexWhere(_.isEmpty) match {
+      case -1 => None
+      case n =>
+        fed.lastOption.map { lastFed =>
+          val unmarked = originalPerSetOfFive.flatten.toSet -- fed
+          unmarked.sum * lastFed
         }
-      }
-      winnerScoreCache
     }
-  }
-  override def toString = {
-    val debug = s"Board:${numbers.map(_.mkString(",")).mkString("\n")}"
-    s"$debug\n$setsOfFive"
-  }
 }
 
 val (bingoNumberFeed, bingoFields) = {
