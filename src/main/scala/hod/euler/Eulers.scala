@@ -23,8 +23,8 @@ import scala.collection.mutable.ArrayBuffer
 }
 
 @main def euler107 = {
-  val txt = "resource/network.txt"
-  val size            =40
+  val txt             = "resource/network.txt"
+  val size            = 40
   val originalNetwork = {
     var row  = 0
     val data = Array.ofDim[Option[Int]](size, size)
@@ -52,7 +52,7 @@ import scala.collection.mutable.ArrayBuffer
           .zipWithIndex
           .filter(_._1.isDefined)
           .filter(e => stillOpen(e._2))
-          .map {  (value, where) => (value.get, where) }
+          .map { (value, where) => (value.get, where) }
           .minByOption(_._1)
           .map { shortest =>
             Connection(i, shortest._2, shortest._1)
@@ -82,10 +82,31 @@ import scala.collection.mutable.ArrayBuffer
   }
 
   val betterNetwork = optimize(originalNetwork)
-  val initialCost = originalNetwork.map(_.map(_.getOrElse(0)).sum).sum /2
+  val initialCost   = originalNetwork.map(_.map(_.getOrElse(0)).sum).sum / 2
   val optimizedCost = betterNetwork.map(_.cost).sum
-  val saved = initialCost-optimizedCost
+  val saved         = initialCost - optimizedCost
   println(initialCost)
   println(optimizedCost)
   println(saved)
+}
+
+@main def euler359 = {
+  val fxr     = 71328803586048L
+  val limit   = math.sqrt(fxr).toLong
+  val factors = {
+    Iterator.iterate(1L) {_ + 1}
+            .takeWhile(_ <= limit)
+            .flatMap { i =>
+              if (fxr % i == 0) {
+                List((i, fxr / i), (fxr / i,i))
+              } else {
+                Nil
+              }
+            }.toList
+            .distinct
+            .sorted
+  }
+
+
+  factors.foreach(println)
 }
