@@ -49,7 +49,7 @@ class Bingo(numbers: IndexedSeq[IndexedSeq[Int]]) {
             }
         }
       }
-        winnerScoreCache
+      winnerScoreCache
     }
   }
   override def toString = {
