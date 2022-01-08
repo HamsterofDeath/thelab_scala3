@@ -1,23 +1,21 @@
 package hod.euler
 package hod.advent
 
-import java.beans.BeanInfo
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 def data4: List[String] = Utils.loadFile(4, false)
 
-class Bingo(numbers: IndexedSeq[IndexedSeq[Int]]) {
-  private val setsOfFive           = {
-    val rows = Range(0, 5).map(numbers(_))
+class Bingo(rows: IndexedSeq[IndexedSeq[Int]]) {
+  private val setsOfFive      = {
     val cols = Range(0, 5).map { row =>
-      Range(0, 5).map(col => numbers(col)(row))
+      Range(0, 5).map(col => rows(col)(row))
 
     }
     (rows ++ cols).map(mutable.HashSet.empty ++= _)
   }
-  private val originalPerSetOfFive = setsOfFive.map(_.toSet)
-  private val fed                  = ArrayBuffer.empty[Int]
+  private val originalNumbers = setsOfFive.flatten.toSet
+  private val fed             = ArrayBuffer.empty[Int]
 
   def fedCount = fed.size
   def feed(in: Int) = {
@@ -26,14 +24,11 @@ class Bingo(numbers: IndexedSeq[IndexedSeq[Int]]) {
     this
   }
   def winnerScore: Option[Int] =
-    setsOfFive.indexWhere(_.isEmpty) match {
-      case -1 => None
-      case n =>
-        fed.lastOption.map { lastFed =>
-          val unmarked = originalPerSetOfFive.flatten.toSet -- fed
-          unmarked.sum * lastFed
-        }
-    }
+    if (setsOfFive.exists(_.isEmpty)) {
+      fed.lastOption.map { lastFed =>
+        (originalNumbers -- fed).sum * lastFed
+      }
+    } else None
 }
 
 val (bingoNumberFeed, bingoFields) = {
@@ -45,8 +40,7 @@ val (bingoNumberFeed, bingoFields) = {
       .grouped(6)
       .map { block =>
         val grid   = block.map(_.grouped(3).map(_.trim.toInt)).take(5)
-        val vector = grid.map(_.toVector).toVector
-        Bingo(vector)
+        Bingo(grid.map(_.toVector).toVector)
       }.toVector
   }
   (numbers, bingos)
