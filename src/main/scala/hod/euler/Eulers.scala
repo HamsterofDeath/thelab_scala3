@@ -98,7 +98,7 @@ import scala.collection.mutable.ArrayBuffer
             .takeWhile(_ <= limit)
             .flatMap { i =>
               if (fxr % i == 0) {
-                List((i, fxr / i), (fxr / i,i))
+                List((i, fxr / i), (fxr / i, i))
               } else {
                 Nil
               }
@@ -107,6 +107,87 @@ import scala.collection.mutable.ArrayBuffer
             .sorted
   }
 
-
   factors.foreach(println)
+}
+
+@main def euler230 = {
+  val cache = mutable.HashMap.empty[Int, Long]
+
+  val A = 'A'
+  val B = 'B'
+  val ab = List(A,B)
+  def stupidSequenceGenerate(n: Int): String = ab(n).toString
+
+  def fib(n: Int): Long = {
+      n match {
+        case 0 | 1 => 1
+        case n => cache.getOrElseUpdate(n, fib(n - 2) + fib(n - 1))
+      }
+  }
+
+  def fibs = Iterator.from(0).map(fib)
+
+  def indexOfNextLargerFib(n: Long) = {
+    fibs.indexWhere(_ > n)
+  }
+
+  val lookupLimit      = 2
+  val lookUp = List.tabulate(lookupLimit)(stupidSequenceGenerate)
+
+  val maxN     = 17
+  def nToIndexInSequence(n:Int) = {
+    ((127 + 19 * n) * BigInt(7).pow(n)).bigInteger.longValueExact()
+  }
+  val test = false
+  val a        = if (test) "1415926535" else "1415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679"
+  val b        = if (test) "8979323846" else "8214808651328230664709384460955058223172535940812848111745028410270193852110555964462294895493038196"
+  val elementSize = a.length
+
+  def solveFor(nInInitialSequence: Long) = {
+    def solveForTuple(nInSequence: Long, sequenceIndex: Int): Boolean = {
+      if (lookupLimit>sequenceIndex) {
+        lookUp(sequenceIndex)(nInSequence.toInt) == A
+      } else {
+        val leftSubSequenceIndex = sequenceIndex - 2
+        val isInLeftPart         = nInSequence < fib(leftSubSequenceIndex)
+        if (isInLeftPart) {
+          solveForTuple(nInSequence, leftSubSequenceIndex)
+        } else {
+          val rightSubSequenceIndex = leftSubSequenceIndex + 1
+          val newIndex                     = nInSequence - fib(leftSubSequenceIndex)
+          solveForTuple(newIndex, rightSubSequenceIndex)
+        }
+      }
+    }
+
+    val index = indexOfNextLargerFib(nInInitialSequence)
+    solveForTuple(nInInitialSequence, index)
+  }
+
+  def dab(n:Long):Int = {
+    val indexOnCompressedSequence = n / elementSize
+    val remainder = (n % elementSize)
+    require(remainder.isValidInt)
+    val isA = solveFor(indexOnCompressedSequence)
+    val character = if(isA) {
+      a(remainder.toInt)
+    } else {
+      b(remainder.toInt)
+    }
+    Character.getNumericValue(character)
+  }
+
+  val solution = {
+    if (test) {
+      dab(34)
+    } else {
+      (0 to maxN).map { n =>
+        val index = nToIndexInSequence(n)-1
+        BigInt(10).pow(n) * dab(index)
+      }.sum
+
+    }
+  }
+  println(solution)
+
 }
