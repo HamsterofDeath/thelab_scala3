@@ -4,10 +4,11 @@ import java.io.File
 import java.net.URI
 import java.nio.file.{Files, Path}
 import java.util.stream.Collectors
+import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
-@main def euler55 = {
+@main def euler55(): Unit = {
   def isLychrel(bi: BigInt) = {
     def next(bi: BigInt) = bi + BigInt(bi.toString.reverse)
 
@@ -22,7 +23,7 @@ import scala.collection.mutable.ArrayBuffer
   println(9999 - solutions.size)
 }
 
-@main def euler107 = {
+@main def euler107(): Unit = {
   val txt             = "resource/network.txt"
   val size            = 40
   val originalNetwork = {
@@ -90,7 +91,7 @@ import scala.collection.mutable.ArrayBuffer
   println(saved)
 }
 
-@main def euler359 = {
+@main def euler359(): Unit = {
   val fxr     = 71328803586048L
   val limit   = math.sqrt(fxr).toLong
   val factors = {
@@ -110,7 +111,7 @@ import scala.collection.mutable.ArrayBuffer
   factors.foreach(println)
 }
 
-@main def euler230 = {
+@main def euler230(): Unit = {
   val cache = mutable.HashMap.empty[Int, Long]
 
   val A = 'A'
@@ -144,6 +145,7 @@ import scala.collection.mutable.ArrayBuffer
   val elementSize = a.length
 
   def solveFor(nInInitialSequence: Long) = {
+    @tailrec
     def solveForTuple(nInSequence: Long, sequenceIndex: Int): Boolean = {
       if (lookupLimit>sequenceIndex) {
         lookUp(sequenceIndex)(nInSequence.toInt) == A
@@ -188,6 +190,64 @@ import scala.collection.mutable.ArrayBuffer
 
     }
   }
+  println(solution)
+
+}
+
+@main def euler17():Unit = {
+  def spell(n: Int): String = {
+    n match {
+      case n if n < 10 =>
+        n match {
+          case 0 => ""
+          case 1 => "one"
+          case 2 => "two"
+          case 3 => "three"
+          case 4 => "four"
+          case 5 => "five"
+          case 6 => "six"
+          case 7 => "seven"
+          case 8 => "eight"
+          case 9 => "nine"
+        }
+      case n if n >= 10 && n <= 19 =>
+        n match {
+          case 10 => "ten"
+          case 11 => "eleven"
+          case 12 => "twelve"
+          case 13 => "thirteen"
+          case 14 => "fourteen"
+          case 15 => "fifteen"
+          case 16 => "sixteen"
+          case 17 => "seventeen"
+          case 18 => "eighteen"
+          case 19 => "nineteen"
+        }
+      case n if n <= 99 =>
+        val left = n / 10 match {
+          case 2 => "twenty"
+          case 3 => "thirty"
+          case 4 => "forty"
+          case 5 => "fifty"
+          case 6 => "sixty"
+          case 7 => "seventy"
+          case 8 => "eighty"
+          case 9 => "ninety"
+        }
+        val hyphen = if (n%10>0) "-" else ""
+        left + hyphen + spell(n % 10)
+      case n if n < 1000 =>
+        val and = if (n%100>0) " and " else ""
+        spell(n/100) + " hundred" + and + spell(n%100)
+      case n if n < 10000 =>
+        spell(n/1000) + " thousand " + spell(n%1000)
+    }
+  }
+
+  val solution = (1 to 1000).map { i =>
+    spell(i).count(_.isLetter)
+  }.sum
+
   println(solution)
 
 }
