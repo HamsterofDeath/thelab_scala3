@@ -251,3 +251,12 @@ import scala.collection.mutable.ArrayBuffer
   println(solution)
 
 }
+
+@main def euler5():Unit = {
+  val test = 1 to 20
+  val solution = Iterator.from(1).find { e =>
+    val candidate = e * 20L
+    test.forall(candidate % _ == 0)
+  }
+  println(solution.get*20)
+}
