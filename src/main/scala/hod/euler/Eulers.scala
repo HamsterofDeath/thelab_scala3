@@ -260,3 +260,53 @@ import scala.collection.mutable.ArrayBuffer
   }
   println(solution.get*20)
 }
+
+@main def euler73():Unit = {
+  def isReducedProperFraction(n:Int, d:Int) = 1 == gcdEuclid(n,d)
+  def gcdEuclid(a: Int, b: Int) = {
+    var max       = Math.max(a, b)
+    var min       = Math.min(a, b)
+    var remainder = max % min
+    while (remainder != 0) {
+      max = min
+      min = remainder
+      remainder = max % min
+    }
+    min
+  }
+
+  def isASmallerThanB(n1:Int,d1:Int, n2:Int, d2:Int) = n1*d2.toLong<n2*d1.toLong
+
+  val ds = 1 to 12000
+  val solution = ds.map { d =>
+    val ns = (d / 3) to (d / 2)
+    ns.count { n =>
+      isASmallerThanB(1, 3, n, d) &&
+      isASmallerThanB(n, d, 1, 2) &&
+      isReducedProperFraction(n, d)
+    }
+  }.sum
+  println(solution)
+}
+
+@main def euler85():Unit = {
+
+  def countPlacements(w:Int, h:Int,tw:Int, th:Int) = {
+    (((tw-w)+1)*((th-h)+1)).toLong
+  }
+
+  val solution = Iterator.from(1).take(100).flatMap { tw =>
+    Iterator.from(1).take(tw).map { th =>
+      val totalPlacements = {
+        1 to tw flatMap { w =>
+          1 to th map { h =>
+            countPlacements(w, h, tw, th)
+          }
+        }
+      }
+      ((tw,th), totalPlacements.sum)
+    }
+  }
+  val best = solution.toList.minBy(e => (2000000 - e._2).abs)._1
+  println(best._1*best._2)
+}
