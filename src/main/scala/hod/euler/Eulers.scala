@@ -314,7 +314,7 @@ import scala.collection.mutable.ArrayBuffer
 @main def euler225():Unit = {
   def tribonacciMods(modBy:Int) = {
     var a,b,c = 1
-    val seen = mutable.HashSet.empty[(Int, Int, Int)]
+    def seen(a:Int,b:Int,c:Int) = a==1&&b==1&&c==1
     var extra = true
     var circleDetected = false
     var endDetected = false
@@ -326,13 +326,12 @@ import scala.collection.mutable.ArrayBuffer
       next
     }.takeWhile { e =>
       endDetected      |= e == 0
-      circleDetected |= seen((a,b,c))
+      circleDetected |= seen(a,b,c)
       val stopAfterThis        = endDetected || circleDetected
       val includeNext = !stopAfterThis || extra
       if (stopAfterThis) {
         extra = false
       }
-      seen += ((a,b,c))
       includeNext
     }
   }
