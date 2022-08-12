@@ -4,10 +4,11 @@ import java.io.File
 import java.net.URI
 import java.nio.file.{Files, Path}
 import java.util.stream.Collectors
+import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
-@main def euler55 = {
+@main def euler55(): Unit = {
   def isLychrel(bi: BigInt) = {
     def next(bi: BigInt) = bi + BigInt(bi.toString.reverse)
 
@@ -22,7 +23,7 @@ import scala.collection.mutable.ArrayBuffer
   println(9999 - solutions.size)
 }
 
-@main def euler107 = {
+@main def euler107(): Unit = {
   val txt             = "resource/network.txt"
   val size            = 40
   val originalNetwork = {
@@ -90,7 +91,7 @@ import scala.collection.mutable.ArrayBuffer
   println(saved)
 }
 
-@main def euler359 = {
+@main def euler359(): Unit = {
   val fxr     = 71328803586048L
   val limit   = math.sqrt(fxr).toLong
   val factors = {
@@ -110,7 +111,7 @@ import scala.collection.mutable.ArrayBuffer
   factors.foreach(println)
 }
 
-@main def euler230 = {
+@main def euler230(): Unit = {
   val cache = mutable.HashMap.empty[Int, Long]
 
   val A = 'A'
@@ -144,6 +145,7 @@ import scala.collection.mutable.ArrayBuffer
   val elementSize = a.length
 
   def solveFor(nInInitialSequence: Long) = {
+    @tailrec
     def solveForTuple(nInSequence: Long, sequenceIndex: Int): Boolean = {
       if (lookupLimit>sequenceIndex) {
         lookUp(sequenceIndex)(nInSequence.toInt) == A
@@ -190,6 +192,123 @@ import scala.collection.mutable.ArrayBuffer
   }
   println(solution)
 
+}
+
+@main def euler17():Unit = {
+  def spell(n: Int): String = {
+    n match {
+      case n if n < 10 =>
+        n match {
+          case 0 => ""
+          case 1 => "one"
+          case 2 => "two"
+          case 3 => "three"
+          case 4 => "four"
+          case 5 => "five"
+          case 6 => "six"
+          case 7 => "seven"
+          case 8 => "eight"
+          case 9 => "nine"
+        }
+      case n if n >= 10 && n <= 19 =>
+        n match {
+          case 10 => "ten"
+          case 11 => "eleven"
+          case 12 => "twelve"
+          case 13 => "thirteen"
+          case 14 => "fourteen"
+          case 15 => "fifteen"
+          case 16 => "sixteen"
+          case 17 => "seventeen"
+          case 18 => "eighteen"
+          case 19 => "nineteen"
+        }
+      case n if n <= 99 =>
+        val left = n / 10 match {
+          case 2 => "twenty"
+          case 3 => "thirty"
+          case 4 => "forty"
+          case 5 => "fifty"
+          case 6 => "sixty"
+          case 7 => "seventy"
+          case 8 => "eighty"
+          case 9 => "ninety"
+        }
+        val hyphen = if (n%10>0) "-" else ""
+        left + hyphen + spell(n % 10)
+      case n if n < 1000 =>
+        val and = if (n%100>0) " and " else ""
+        spell(n/100) + " hundred" + and + spell(n%100)
+      case n if n < 10000 =>
+        spell(n/1000) + " thousand " + spell(n%1000)
+    }
+  }
+
+  val solution = (1 to 1000).map { i =>
+    spell(i).count(_.isLetter)
+  }.sum
+
+  println(solution)
+
+}
+
+@main def euler5():Unit = {
+  val test = 1 to 20
+  val solution = Iterator.from(1).find { e =>
+    val candidate = e * 20L
+    test.forall(candidate % _ == 0)
+  }
+  println(solution.get*20)
+}
+
+@main def euler73():Unit = {
+  def isReducedProperFraction(n:Int, d:Int) = 1 == gcdEuclid(n,d)
+  def gcdEuclid(a: Int, b: Int) = {
+    var max       = Math.max(a, b)
+    var min       = Math.min(a, b)
+    var remainder = max % min
+    while (remainder != 0) {
+      max = min
+      min = remainder
+      remainder = max % min
+    }
+    min
+  }
+
+  def isASmallerThanB(n1:Int,d1:Int, n2:Int, d2:Int) = n1*d2.toLong<n2*d1.toLong
+
+  val ds = 1 to 12000
+  val solution = ds.map { d =>
+    val ns = (d / 3) to (d / 2)
+    ns.count { n =>
+      isASmallerThanB(1, 3, n, d) &&
+      isASmallerThanB(n, d, 1, 2) &&
+      isReducedProperFraction(n, d)
+    }
+  }.sum
+  println(solution)
+}
+
+@main def euler85():Unit = {
+
+  def countPlacements(w:Int, h:Int,tw:Int, th:Int) = {
+    (((tw-w)+1)*((th-h)+1)).toLong
+  }
+
+  val solution = Iterator.from(1).take(100).flatMap { tw =>
+    Iterator.from(1).take(tw).map { th =>
+      val totalPlacements = {
+        1 to tw flatMap { w =>
+          1 to th map { h =>
+            countPlacements(w, h, tw, th)
+          }
+        }
+      }
+      ((tw,th), totalPlacements.sum)
+    }
+  }
+  val best = solution.toList.minBy(e => (2000000 - e._2).abs)._1
+  println(best._1*best._2)
 }
 
 @main def euler225():Unit = {
