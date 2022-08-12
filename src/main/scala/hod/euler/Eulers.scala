@@ -191,3 +191,34 @@ import scala.collection.mutable.ArrayBuffer
   println(solution)
 
 }
+
+@main def euler225():Unit = {
+  def tribonacciMods(modBy:Int) = {
+    var a,b,c = 1
+    val seen = mutable.HashSet.empty[(Int, Int, Int)]
+    var extra = true
+    var circleDetected = false
+    var endDetected = false
+    Iterator.continually {
+      val next = (a + b + c) % modBy
+      a = b
+      b = c
+      c = next
+      next
+    }.takeWhile { e =>
+      endDetected      |= e == 0
+      circleDetected |= seen((a,b,c))
+      val stopAfterThis        = endDetected || circleDetected
+      val includeNext = !stopAfterThis || extra
+      if (stopAfterThis) {
+        extra = false
+      }
+      seen += ((a,b,c))
+      includeNext
+    }
+  }
+  val nonDivisors = Iterator.from(1,2).filter { test =>
+    !tribonacciMods(test).contains(0)
+  }.take(124).toList.last
+  println(nonDivisors)
+}
