@@ -3,10 +3,12 @@ package hod.euler
 import java.io.File
 import java.net.URI
 import java.nio.file.{Files, Path}
+import java.util.concurrent.atomic.AtomicLong
 import java.util.stream.Collectors
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
+import scala.collection.parallel.CollectionConverters.seqIsParallelizable
 
 @main def euler55(): Unit = {
   def isLychrel(bi: BigInt) = {
@@ -371,47 +373,77 @@ import scala.collection.mutable.ArrayBuffer
     cache.getOrElseUpdate(k, eval)
   }
 
-  val boxSize = 4
-///  val boxSize = 2000
+  //val boxSize  = 4
+    val boxSize = 2000
   val sequence = {
-  //1 to boxSize*boxSize map { k => laggedFibonacci(k) }
-  List(-2,5,3,2,9,-6,5,1,3,2,7,3,-1,8,-4,8)
-}
-  def numberAt(x:Int,y:Int) = {
+    1 to boxSize*boxSize map { k => laggedFibonacci(k) }
+    //List(-2, 5, 3, 2, 9, -6, 5, 1, 3, 2, 7, 3, -1, 8, -4, 8)
+  }
+
+  def numberAt(x: Int, y: Int) = {
     sequence(x + y * boxSize)
   }
 
   val solution = {
     var largest = 0L
+    var progress = AtomicLong(0)
     def range = 0 until boxSize
-    //columns
-    range.foreach { x =>
-      range.foreach { startY =>
-        var sumOfSubSequence = 0L
-        startY until boxSize foreach { y =>
-          sumOfSubSequence += numberAt(x, y)
-          largest = largest max sumOfSubSequence
+    //columns + rows
+    println("+")
+    largest = range.par.map { colOrRow =>
+      range.map { notColOrRow =>
+        if(progress.incrementAndGet()% 10000==0) print('.')
+        var sumOfSubSequenceRow = 0L
+        var sumOfSubSequenceCol = 0L
+        var largestSubValue = 0L
+        notColOrRow until boxSize foreach { xOrY =>
+          sumOfSubSequenceRow += numberAt(colOrRow, xOrY)
+          sumOfSubSequenceCol += numberAt(xOrY, colOrRow)
+          largestSubValue = largestSubValue max sumOfSubSequenceRow max sumOfSubSequenceCol
         }
-      }
-    }
-    // rows
-    range.foreach { y =>
-      range.foreach { startX =>
-        var sumOfSubSequence = 0L
-        startX until boxSize foreach { x =>
-          sumOfSubSequence += numberAt(x, y)
-          largest = largest max sumOfSubSequence
-        }
-      }
-    }
-    // diagonals /
-    0 until 2*boxSize foreach { i =>
-      val startX = 0 max (i-boxSize)
-      val startY = i min boxSize
+        largestSubValue
+      }.max
+    }.max
+    // diagonals / + \
+    println("/\\")
+    largest = largest max (0 until 2 * boxSize).par.map { i =>
+      var subLargest = 0L
+      val edgeX = 0 max (i - boxSize)
+      val mirrorEdgeX = boxSize-edgeX-1
+      val edgeY = i min (boxSize-1)
 
-      Iterator.from()
-      println(s"$startX / $startY")
-    }
+      def coordinatesSlash(startX: Int, startY: Int) = {
+        Iterator.iterate((startX, startY))((x: Int, y: Int) => (x + 1, y - 1))
+                .takeWhile((x, y) => x < boxSize && y >= 0)
+      }
+      def coordinatesBackSlash(startX: Int, startY: Int) = {
+        Iterator.iterate((startX, startY))((x: Int, y: Int) => (x + 1, y + 1))
+                .takeWhile((x, y) => x < boxSize && y < boxSize)
+      }
+
+      def allCoordinatesSlash = coordinatesSlash(edgeX, edgeY)
+      def allCoordinatesBackSlash = coordinatesBackSlash(mirrorEdgeX, edgeY)
+
+      allCoordinatesSlash.foreach { (startX, startY) =>
+        if(progress.incrementAndGet()% 10000==0) print('.')
+
+        var subSequenceSumSlash     = 0L
+        coordinatesSlash(startX, startY).foreach { (x, y) =>
+          subSequenceSumSlash += numberAt(x, y)
+          subLargest = subLargest max subSequenceSumSlash
+        }
+      }
+      allCoordinatesBackSlash.foreach { (startX, startY) =>
+        if(progress.incrementAndGet()% 10000==0) print('.')
+
+        var subSequenceSumBackSlash     = 0L
+        coordinatesSlash(startX, startY).foreach { (x, y) =>
+          subSequenceSumBackSlash += numberAt(x, y)
+          subLargest = subLargest max subSequenceSumBackSlash
+        }
+      }
+      subLargest
+    }.max
     largest
   }
   println(solution)

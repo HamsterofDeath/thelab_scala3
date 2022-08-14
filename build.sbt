@@ -7,3 +7,6 @@ lazy val root = (project in file("."))
     name := "thelabv2",
     idePackagePrefix := Some("hod.euler")
   )
+
+libraryDependencies +=
+"org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.4"
