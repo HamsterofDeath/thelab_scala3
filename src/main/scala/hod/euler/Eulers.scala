@@ -114,16 +114,17 @@ import scala.collection.mutable.ArrayBuffer
 @main def euler230(): Unit = {
   val cache = mutable.HashMap.empty[Int, Long]
 
-  val A = 'A'
-  val B = 'B'
-  val ab = List(A,B)
+  val A  = 'A'
+  val B  = 'B'
+  val ab = List(A, B)
+
   def stupidSequenceGenerate(n: Int): String = ab(n).toString
 
   def fib(n: Int): Long = {
-      n match {
-        case 0 | 1 => 1
-        case n => cache.getOrElseUpdate(n, fib(n - 2) + fib(n - 1))
-      }
+    n match {
+      case 0 | 1 => 1
+      case n => cache.getOrElseUpdate(n, fib(n - 2) + fib(n - 1))
+    }
   }
 
   def fibs = Iterator.from(0).map(fib)
@@ -132,22 +133,26 @@ import scala.collection.mutable.ArrayBuffer
     fibs.indexWhere(_ > n)
   }
 
-  val lookupLimit      = 2
-  val lookUp = List.tabulate(lookupLimit)(stupidSequenceGenerate)
+  val lookupLimit = 2
+  val lookUp      = List.tabulate(lookupLimit)(stupidSequenceGenerate)
 
-  val maxN     = 17
-  def nToIndexInSequence(n:Int) = {
+  val maxN = 17
+
+  def nToIndexInSequence(n: Int) = {
     ((127 + 19 * n) * BigInt(7).pow(n)).bigInteger.longValueExact()
   }
-  val test = false
-  val a        = if (test) "1415926535" else "1415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679"
-  val b        = if (test) "8979323846" else "8214808651328230664709384460955058223172535940812848111745028410270193852110555964462294895493038196"
+
+  val test        = false
+  val a           = if (test) "1415926535" else
+    "1415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679"
+  val b           = if (test) "8979323846" else
+    "8214808651328230664709384460955058223172535940812848111745028410270193852110555964462294895493038196"
   val elementSize = a.length
 
   def solveFor(nInInitialSequence: Long) = {
     @tailrec
     def solveForTuple(nInSequence: Long, sequenceIndex: Int): Boolean = {
-      if (lookupLimit>sequenceIndex) {
+      if (lookupLimit > sequenceIndex) {
         lookUp(sequenceIndex)(nInSequence.toInt) == A
       } else {
         val leftSubSequenceIndex = sequenceIndex - 2
@@ -156,7 +161,7 @@ import scala.collection.mutable.ArrayBuffer
           solveForTuple(nInSequence, leftSubSequenceIndex)
         } else {
           val rightSubSequenceIndex = leftSubSequenceIndex + 1
-          val newIndex                     = nInSequence - fib(leftSubSequenceIndex)
+          val newIndex              = nInSequence - fib(leftSubSequenceIndex)
           solveForTuple(newIndex, rightSubSequenceIndex)
         }
       }
@@ -166,12 +171,12 @@ import scala.collection.mutable.ArrayBuffer
     solveForTuple(nInInitialSequence, index)
   }
 
-  def dab(n:Long):Int = {
+  def dab(n: Long): Int = {
     val indexOnCompressedSequence = n / elementSize
-    val remainder = (n % elementSize)
+    val remainder                 = (n % elementSize)
     require(remainder.isValidInt)
-    val isA = solveFor(indexOnCompressedSequence)
-    val character = if(isA) {
+    val isA       = solveFor(indexOnCompressedSequence)
+    val character = if (isA) {
       a(remainder.toInt)
     } else {
       b(remainder.toInt)
@@ -184,7 +189,7 @@ import scala.collection.mutable.ArrayBuffer
       dab(34)
     } else {
       (0 to maxN).map { n =>
-        val index = nToIndexInSequence(n)-1
+        val index = nToIndexInSequence(n) - 1
         BigInt(10).pow(n) * dab(index)
       }.sum
 
@@ -194,7 +199,7 @@ import scala.collection.mutable.ArrayBuffer
 
 }
 
-@main def euler17():Unit = {
+@main def euler17(): Unit = {
   def spell(n: Int): String = {
     n match {
       case n if n < 10 =>
@@ -224,7 +229,7 @@ import scala.collection.mutable.ArrayBuffer
           case 19 => "nineteen"
         }
       case n if n <= 99 =>
-        val left = n / 10 match {
+        val left   = n / 10 match {
           case 2 => "twenty"
           case 3 => "thirty"
           case 4 => "forty"
@@ -234,13 +239,13 @@ import scala.collection.mutable.ArrayBuffer
           case 8 => "eighty"
           case 9 => "ninety"
         }
-        val hyphen = if (n%10>0) "-" else ""
+        val hyphen = if (n % 10 > 0) "-" else ""
         left + hyphen + spell(n % 10)
       case n if n < 1000 =>
-        val and = if (n%100>0) " and " else ""
-        spell(n/100) + " hundred" + and + spell(n%100)
+        val and = if (n % 100 > 0) " and " else ""
+        spell(n / 100) + " hundred" + and + spell(n % 100)
       case n if n < 10000 =>
-        spell(n/1000) + " thousand " + spell(n%1000)
+        spell(n / 1000) + " thousand " + spell(n % 1000)
     }
   }
 
@@ -252,17 +257,18 @@ import scala.collection.mutable.ArrayBuffer
 
 }
 
-@main def euler5():Unit = {
-  val test = 1 to 20
+@main def euler5(): Unit = {
+  val test     = 1 to 20
   val solution = Iterator.from(1).find { e =>
     val candidate = e * 20L
     test.forall(candidate % _ == 0)
   }
-  println(solution.get*20)
+  println(solution.get * 20)
 }
 
-@main def euler73():Unit = {
-  def isReducedProperFraction(n:Int, d:Int) = 1 == gcdEuclid(n,d)
+@main def euler73(): Unit = {
+  def isReducedProperFraction(n: Int, d: Int) = 1 == gcdEuclid(n, d)
+
   def gcdEuclid(a: Int, b: Int) = {
     var max       = Math.max(a, b)
     var min       = Math.min(a, b)
@@ -275,9 +281,9 @@ import scala.collection.mutable.ArrayBuffer
     min
   }
 
-  def isASmallerThanB(n1:Int,d1:Int, n2:Int, d2:Int) = n1*d2.toLong<n2*d1.toLong
+  def isASmallerThanB(n1: Int, d1: Int, n2: Int, d2: Int) = n1 * d2.toLong < n2 * d1.toLong
 
-  val ds = 1 to 12000
+  val ds       = 1 to 12000
   val solution = ds.map { d =>
     val ns = (d / 3) to (d / 2)
     ns.count { n =>
@@ -289,10 +295,10 @@ import scala.collection.mutable.ArrayBuffer
   println(solution)
 }
 
-@main def euler85():Unit = {
+@main def euler85(): Unit = {
 
-  def countPlacements(w:Int, h:Int,tw:Int, th:Int) = {
-    (((tw-w)+1)*((th-h)+1)).toLong
+  def countPlacements(w: Int, h: Int, tw: Int, th: Int) = {
+    (((tw - w) + 1) * ((th - h) + 1)).toLong
   }
 
   val solution = Iterator.from(1).take(100).flatMap { tw =>
@@ -304,20 +310,22 @@ import scala.collection.mutable.ArrayBuffer
           }
         }
       }
-      ((tw,th), totalPlacements.sum)
+      ((tw, th), totalPlacements.sum)
     }
   }
-  val best = solution.toList.minBy(e => (2000000 - e._2).abs)._1
-  println(best._1*best._2)
+  val best     = solution.toList.minBy(e => (2000000 - e._2).abs)._1
+  println(best._1 * best._2)
 }
 
-@main def euler225():Unit = {
-  def tribonacciMods(modBy:Int) = {
-    var a,b,c = 1
-    def seen(a:Int,b:Int,c:Int) = a==1&&b==1&&c==1
-    var extra = true
+@main def euler225(): Unit = {
+  def tribonacciMods(modBy: Int) = {
+    var a, b, c = 1
+
+    def seen(a: Int, b: Int, c: Int) = a == 1 && b == 1 && c == 1
+
+    var extra          = true
     var circleDetected = false
-    var endDetected = false
+    var endDetected    = false
     Iterator.continually {
       val next = (a + b + c) % modBy
       a = b
@@ -325,18 +333,87 @@ import scala.collection.mutable.ArrayBuffer
       c = next
       next
     }.takeWhile { e =>
-      endDetected      |= e == 0
-      circleDetected |= seen(a,b,c)
-      val stopAfterThis        = endDetected || circleDetected
-      val includeNext = !stopAfterThis || extra
+      endDetected |= e == 0
+      circleDetected |= seen(a, b, c)
+      val stopAfterThis = endDetected || circleDetected
+      val includeNext   = !stopAfterThis || extra
       if (stopAfterThis) {
         extra = false
       }
       includeNext
     }
   }
-  val nonDivisors = Iterator.from(1,2).filter { test =>
+
+  val nonDivisors = Iterator.from(1, 2).filter { test =>
     !tribonacciMods(test).contains(0)
   }.take(124).toList.last
   println(nonDivisors)
+}
+
+@main def euler149(): Unit = {
+  extension (i: Int) {
+    def toBigInt = BigInt(i)
+  }
+
+  val cache = mutable.HashMap.empty[Int, Int]
+
+  def laggedFibonacci(k: Int): Int = {
+    def eval = {
+      if (1 <= k && k <= 55) {
+        ((100003.toBigInt - 200003.toBigInt * k + 300007L * k * k * k) % 1000000 - 500000).toInt
+      } else if (56 <= k && k <= 4000000) {
+        ((laggedFibonacci(k - 24) + laggedFibonacci(k - 55) + 1000000) % 1000000 - 500000)
+      } else {
+        throw new RuntimeException()
+      }
+    }
+
+    cache.getOrElseUpdate(k, eval)
+  }
+
+  val boxSize = 4
+///  val boxSize = 2000
+  val sequence = {
+  //1 to boxSize*boxSize map { k => laggedFibonacci(k) }
+  List(-2,5,3,2,9,-6,5,1,3,2,7,3,-1,8,-4,8)
+}
+  def numberAt(x:Int,y:Int) = {
+    sequence(x + y * boxSize)
+  }
+
+  val solution = {
+    var largest = 0L
+    def range = 0 until boxSize
+    //columns
+    range.foreach { x =>
+      range.foreach { startY =>
+        var sumOfSubSequence = 0L
+        startY until boxSize foreach { y =>
+          sumOfSubSequence += numberAt(x, y)
+          largest = largest max sumOfSubSequence
+        }
+      }
+    }
+    // rows
+    range.foreach { y =>
+      range.foreach { startX =>
+        var sumOfSubSequence = 0L
+        startX until boxSize foreach { x =>
+          sumOfSubSequence += numberAt(x, y)
+          largest = largest max sumOfSubSequence
+        }
+      }
+    }
+    // diagonals /
+    0 until 2*boxSize foreach { i =>
+      val startX = 0 max (i-boxSize)
+      val startY = i min boxSize
+
+      Iterator.from()
+      println(s"$startX / $startY")
+    }
+    largest
+  }
+  println(solution)
+
 }
