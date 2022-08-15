@@ -374,9 +374,10 @@ import scala.collection.parallel.CollectionConverters.seqIsParallelizable
   }
 
   //val boxSize  = 4
-    val boxSize = 2000
+  val boxSize  = 2000
   val sequence = {
-    1 to boxSize*boxSize map { k => laggedFibonacci(k) }
+    println("prep")
+    1 to boxSize * boxSize map { k => laggedFibonacci(k) }
     //List(-2, 5, 3, 2, 9, -6, 5, 1, 3, 2, 7, 3, -1, 8, -4, 8)
   }
 
@@ -384,68 +385,61 @@ import scala.collection.parallel.CollectionConverters.seqIsParallelizable
     sequence(x + y * boxSize)
   }
 
-  val solution = {
-    var largest = 0L
-    var progress = AtomicLong(0)
-    def range = 0 until boxSize
-    //columns + rows
-    println("+")
-    largest = range.par.map { colOrRow =>
-      range.map { notColOrRow =>
-        if(progress.incrementAndGet()% 10000==0) print('.')
-        var sumOfSubSequenceRow = 0L
-        var sumOfSubSequenceCol = 0L
-        var largestSubValue = 0L
-        notColOrRow until boxSize foreach { xOrY =>
-          sumOfSubSequenceRow += numberAt(colOrRow, xOrY)
-          sumOfSubSequenceCol += numberAt(xOrY, colOrRow)
-          largestSubValue = largestSubValue max sumOfSubSequenceRow max sumOfSubSequenceCol
+  def largestSubSum(sequence: Iterator[Int]) = {
+    if (sequence.isEmpty) 0 else {
+      var largestLeftSum = 0L
+      var first          = true
+      var totalMax       = Long.MinValue
+      sequence.foreach { next =>
+        if (first) {
+          largestLeftSum = next
+          first = false
+        } else {
+          largestLeftSum = (largestLeftSum + next) max next
         }
-        largestSubValue
-      }.max
+        totalMax = totalMax max largestLeftSum
+      }
+      totalMax
+    }
+  }
+
+  def solution = {
+    println("do")
+    var largest  = 0L
+
+    def range = 0 until boxSize
+    largest = range.map { colOrRow =>
+      val first  = largestSubSum(range.iterator.map(xOrY => numberAt(colOrRow, xOrY)))
+      val second = largestSubSum(range.iterator.map(xOrY => numberAt(xOrY, colOrRow)))
+      first max second
     }.max
-    // diagonals / + \
-    println("/\\")
-    largest = largest max (0 until 2 * boxSize).par.map { i =>
-      var subLargest = 0L
-      val edgeX = 0 max (i - boxSize)
-      val mirrorEdgeX = boxSize-edgeX-1
-      val edgeY = i min (boxSize-1)
+
+    largest = largest max (0 until 2 * boxSize).map { i =>
+      val edgeX       = 0 max (i - boxSize)
+      val mirrorEdgeX = boxSize - edgeX - 1
+      val edgeY       = i min (boxSize - 1)
 
       def coordinatesSlash(startX: Int, startY: Int) = {
         Iterator.iterate((startX, startY))((x: Int, y: Int) => (x + 1, y - 1))
                 .takeWhile((x, y) => x < boxSize && y >= 0)
       }
+
       def coordinatesBackSlash(startX: Int, startY: Int) = {
         Iterator.iterate((startX, startY))((x: Int, y: Int) => (x + 1, y + 1))
                 .takeWhile((x, y) => x < boxSize && y < boxSize)
       }
 
       def allCoordinatesSlash = coordinatesSlash(edgeX, edgeY)
+
       def allCoordinatesBackSlash = coordinatesBackSlash(mirrorEdgeX, edgeY)
 
-      allCoordinatesSlash.foreach { (startX, startY) =>
-        if(progress.incrementAndGet()% 10000==0) print('.')
-
-        var subSequenceSumSlash     = 0L
-        coordinatesSlash(startX, startY).foreach { (x, y) =>
-          subSequenceSumSlash += numberAt(x, y)
-          subLargest = subLargest max subSequenceSumSlash
-        }
-      }
-      allCoordinatesBackSlash.foreach { (startX, startY) =>
-        if(progress.incrementAndGet()% 10000==0) print('.')
-
-        var subSequenceSumBackSlash     = 0L
-        coordinatesSlash(startX, startY).foreach { (x, y) =>
-          subSequenceSumBackSlash += numberAt(x, y)
-          subLargest = subLargest max subSequenceSumBackSlash
-        }
-      }
-      subLargest
+      val first  = largestSubSum(allCoordinatesSlash.map { (x, y) => numberAt(x, y)})
+      val second = largestSubSum(allCoordinatesBackSlash.map { (x, y) => numberAt(x, y)})
+      first max second
     }.max
     largest
   }
+
   println(solution)
 
 }
