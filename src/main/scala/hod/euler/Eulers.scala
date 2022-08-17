@@ -405,9 +405,10 @@ import scala.collection.parallel.CollectionConverters.seqIsParallelizable
 
   def solution = {
     println("do")
-    var largest  = 0L
+    var largest = 0L
 
     def range = 0 until boxSize
+
     largest = range.map { colOrRow =>
       val first  = largestSubSum(range.iterator.map(xOrY => numberAt(colOrRow, xOrY)))
       val second = largestSubSum(range.iterator.map(xOrY => numberAt(xOrY, colOrRow)))
@@ -433,13 +434,14 @@ import scala.collection.parallel.CollectionConverters.seqIsParallelizable
 
       def allCoordinatesBackSlash = coordinatesBackSlash(mirrorEdgeX, edgeY)
 
-      val first  = largestSubSum(allCoordinatesSlash.map { (x, y) => numberAt(x, y)})
-      val second = largestSubSum(allCoordinatesBackSlash.map { (x, y) => numberAt(x, y)})
+      val first  = largestSubSum(allCoordinatesSlash.map { (x, y) => numberAt(x, y) })
+      val second = largestSubSum(allCoordinatesBackSlash.map { (x, y) => numberAt(x, y) })
       first max second
     }.max
     largest
   }
 
   println(solution)
+
 
 }
