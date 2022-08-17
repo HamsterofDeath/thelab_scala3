@@ -445,3 +445,7 @@ import scala.collection.parallel.CollectionConverters.seqIsParallelizable
 
 
 }
+
+@main def euler258():Unit = {
+  // no idea
+}
