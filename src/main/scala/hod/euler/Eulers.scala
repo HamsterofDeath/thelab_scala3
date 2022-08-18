@@ -443,9 +443,5 @@ import scala.collection.parallel.CollectionConverters.seqIsParallelizable
 
   println(solution)
 
-
 }
 
-@main def euler258():Unit = {
-  // no idea
-}
