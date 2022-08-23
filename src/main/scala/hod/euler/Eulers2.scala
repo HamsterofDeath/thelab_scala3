@@ -43,3 +43,13 @@ import scala.collection.mutable
 
 
 }
+
+@main def euler10():Unit = {
+  def isPrime(n:Int) = {
+    val limit = Math.sqrt(n).toInt
+    val tests = Iterator.single(2) ++ Iterator.from(3,2).takeWhile(_ <= limit)
+    !tests.exists(n % _ == 0)
+  }
+  val primes =  Range(2,4).map(_.toLong) ++ (5 until 2000000 filter isPrime).map(_.toLong)
+  println(primes.sum)
+}
