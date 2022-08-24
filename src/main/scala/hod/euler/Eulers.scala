@@ -455,4 +455,7 @@ import scala.collection.parallel.CollectionConverters.seqIsParallelizable
   println(primes.sum)
 }
 
+@main def euler133():Unit = {
+
+}
 
