@@ -455,6 +455,24 @@ import scala.collection.parallel.CollectionConverters.seqIsParallelizable
   println(primes.sum)
 }
 
+@main def euler10b():Unit = {
+  def isPrime(n:Int):Boolean = {
+    if(n==2) return true
+    val max = Math.sqrt(n).toInt
+    2 to max foreach { test =>
+      if (n % test == 0) return false
+    }
+    true
+  }
+  var summe = 0L
+  2 to 2000000 foreach{ test =>
+    if(isPrime(test)) {
+      summe += test
+    }
+  }
+  println(summe)
+}
+
 @main def euler133():Unit = {
 
 }
