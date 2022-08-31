@@ -1,14 +1,16 @@
-package hod.euler
+package hod
+package euler
 
 import java.io.File
 import java.net.URI
 import java.nio.file.{Files, Path}
-import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
 import java.util.stream.Collectors
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.parallel.CollectionConverters.seqIsParallelizable
+import scala.util.Random
 
 @main def euler55(): Unit = {
   def isLychrel(bi: BigInt) = {
@@ -445,35 +447,72 @@ import scala.collection.parallel.CollectionConverters.seqIsParallelizable
 
 }
 
-@main def euler10():Unit = {
-  def isPrime(n:Int) = {
-    val limit = Math.sqrt(n).toInt
-    val tests = Iterator.single(2) ++ Iterator.from(3,2).takeWhile(_ <= limit)
-    !tests.exists(n % _ == 0)
-  }
-  val primes =  Range(2,4).map(_.toLong) ++ (5 until 2000000 filter isPrime).map(_.toLong)
+@main def euler10(): Unit = {
+  val primes = allPrimesLong.takeWhile(_ <= 2000000)
   println(primes.sum)
 }
 
-@main def euler10b():Unit = {
-  def isPrime(n:Int):Boolean = {
-    if(n==2) return true
-    val max = Math.sqrt(n).toInt
-    2 to max foreach { test =>
-      if (n % test == 0) return false
-    }
-    true
+@main def euler451(): Unit = {
+  def areCoPrime(a: Long, b: Long) = gcdEuclid(a, b) == 1
+
+  def coPrimesOf(n: Int) = Iterator.from(n - 1, -1).take(n - 1).filter(areCoPrime(_, n))
+
+  def generateCoPrimesOf(n: Int) = {
+
   }
-  var summe = 0L
-  2 to 2000000 foreach{ test =>
-    if(isPrime(test)) {
-      summe += test
+
+  val max = 1000
+
+//  val max = 20000000
+
+  def allNumbers = {
+
+    Iterator.from(3).takeWhile(_ <= max)
+    //new Random().shuffle(Iterator.from(20000000,-1).takeWhile(_ >= 3).toArray)
+  }
+
+  val isPrime = dynamicPrimeCheck(max)
+
+  println("Gen primes...")
+  val primes = allNumbers.filter(isPrime(_)).toSet
+
+  def biggestSpecialModularInverse(n: Int): Int = {
+    if (primes(n)) 1 else {
+      val max = n - 2
+      Iterator.from(max, -1).map { e =>
+        (e.toLong * e, e)
+      }.find((sqr, e) => sqr % n == 1)
+              .map(_._2)
+              .get
     }
   }
-  println(summe)
+
+  println("Shuffle...(or not)")
+
+  val counter = AtomicInteger()
+
+  println("Work...")
+  val debug = true
+  val soFar = mutable.HashMap.empty[Int, Int]
+  val all   = allNumbers.map(e => {
+    val solution = biggestSpecialModularInverse(e)
+    soFar.put(e,solution)
+    if (debug) {
+      println(
+        s"""($solution²) ${solution * solution} % $e = ${solution * solution % e},
+           |Factors of $solution = ${primeFactorsOf(solution).toList}
+           |Divisors of $solution = ${divisorsOf(solution).toList}
+           |Factors of $e = ${primeFactorsOf(e).toList}
+           |Divisors of $e = ${divisorsOf(e).toList}
+           |Solutions of factors: ${primeFactorsOf(e).toList.map(e => soFar.get(e.toInt))}
+           |Solutions of divisors: ${divisorsOf(e).toList.map(e => soFar.get(e.toInt))}
+           |""".stripMargin)
+    }
+    if (counter.incrementAndGet() % 25000 == 0) print('.')
+    solution.toLong
+  })
+
+  println(all.sum)
 }
 
-@main def euler133():Unit = {
-
-}
 
