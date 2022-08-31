@@ -9,7 +9,7 @@ import java.util.stream.Collectors
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-import scala.collection.parallel.CollectionConverters.seqIsParallelizable
+import scala.collection.parallel.CollectionConverters.{ArrayIsParallelizable, seqIsParallelizable}
 import scala.util.Random
 
 @main def euler55(): Unit = {
@@ -453,31 +453,40 @@ import scala.util.Random
 }
 
 @main def euler451(): Unit = {
-  def areCoPrime(a: Long, b: Long) = gcdEuclid(a, b) == 1
-
-  def coPrimesOf(n: Int) = Iterator.from(n - 1, -1).take(n - 1).filter(areCoPrime(_, n))
-
-  def generateCoPrimesOf(n: Int) = {
-
-  }
-
-  val max = 1000
-
-//  val max = 20000000
+  val max = 10000
 
   def allNumbers = {
-
     Iterator.from(3).takeWhile(_ <= max)
-    //new Random().shuffle(Iterator.from(20000000,-1).takeWhile(_ >= 3).toArray)
   }
 
   val isPrime = dynamicPrimeCheck(max)
 
-  println("Gen primes...")
-  val primes = allNumbers.filter(isPrime(_)).toSet
+  val nIsSolvedBy = Array.fill(max+1)(1)
+
+  def prepareLookUpFor(x:Int) = {
+      val xSqr   = x.toLong * x
+      val solves = {
+        divisorsOf(xSqr - 1)
+          .filter(_ <= max)
+          .filter(_ - 2 > x)
+          .map(_.toInt)
+      }
+      solves.foreach { n =>
+        nIsSolvedBy(n) match
+          case value if value < x => nIsSolvedBy(n) = x
+          case _ => // discard
+      }
+  }
+
+
+  val start = System.currentTimeMillis()
+
+  allNumbers.foreach(prepareLookUpFor)
+
+  println(System.currentTimeMillis() - start+" ms")
 
   def biggestSpecialModularInverse(n: Int): Int = {
-    if (primes(n)) 1 else {
+    if (isPrime(n)) 1 else {
       val max = n - 2
       Iterator.from(max, -1).map { e =>
         (e.toLong * e, e)
@@ -487,32 +496,37 @@ import scala.util.Random
     }
   }
 
-  println("Shuffle...(or not)")
-
   val counter = AtomicInteger()
 
+  val start2 = System.currentTimeMillis()
   println("Work...")
   val debug = true
   val soFar = mutable.HashMap.empty[Int, Int]
-  val all   = allNumbers.map(e => {
-    val solution = biggestSpecialModularInverse(e)
-    soFar.put(e,solution)
+  val all   = allNumbers.map(n => {
+    val experiment = nIsSolvedBy(n)
     if (debug) {
-      println(
-        s"""($solution²) ${solution * solution} % $e = ${solution * solution % e},
-           |Factors of $solution = ${primeFactorsOf(solution).toList}
-           |Divisors of $solution = ${divisorsOf(solution).toList}
-           |Factors of $e = ${primeFactorsOf(e).toList}
-           |Divisors of $e = ${divisorsOf(e).toList}
-           |Solutions of factors: ${primeFactorsOf(e).toList.map(e => soFar.get(e.toInt))}
-           |Solutions of divisors: ${divisorsOf(e).toList.map(e => soFar.get(e.toInt))}
-           |""".stripMargin)
+      val solution   = biggestSpecialModularInverse(n)
+      if (solution!=experiment) {
+        println(
+          s"""($solution²) ${solution * solution} % $n = ${solution * solution % n},
+             |Method 2 $experiment
+             |Factors of $solution = ${primeFactorsOf(solution).toList}
+             |Divisors of $solution = ${divisorsOf(solution).toList}
+             |Factors of $n = ${primeFactorsOf(n).toList}
+             |Divisors of $n = ${divisorsOf(n).toList}
+             |Solutions of factors: ${primeFactorsOf(n).toList.map(e => e -> soFar.get(e.toInt))}
+             |Solutions of divisors: ${divisorsOf(n).toList.map(e => e -> soFar.get(e.toInt))}
+             |""".stripMargin)
+      }
     }
     if (counter.incrementAndGet() % 25000 == 0) print('.')
-    solution.toLong
+    experiment.toLong
   })
 
   println(all.sum)
+  println(nIsSolvedBy.zipWithIndex.map((a,b) => (a,b)).mkString("\n"))
+  println(System.currentTimeMillis() - start2 + " ms")
+
 }
 
 
