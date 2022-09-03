@@ -1,10 +1,9 @@
 package hod
 
-import java.io.{BufferedInputStream, BufferedReader, DataInputStream, DataOutputStream,
-  EOFException, File, FileInputStream, FileOutputStream, FileReader}
+import java.io.{BufferedInputStream, BufferedReader, DataInputStream, DataOutputStream, EOFException, File, FileInputStream, FileOutputStream, FileReader}
 import java.math.{BigInteger, MathContext, RoundingMode}
 import java.text.{DecimalFormat, DecimalFormatSymbols}
-import java.util.concurrent.Executors
+import java.util.concurrent.{Executors, TimeUnit}
 import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 
@@ -41,7 +40,7 @@ package object euler {
                    terms: Int,
                    precision: Int
                  ) = {
-    val mc   = new MathContext(precision, RoundingMode.HALF_UP)
+    val mc   = MathContext(precision, RoundingMode.HALF_UP)
     val one  = BigDecimal(1, mc)
     val zero = BigDecimal(0, mc)
 
@@ -196,7 +195,7 @@ package object euler {
           case (_, _, TargetIsEqual) =>
             result = Some(max)
           case trip@_ =>
-            throw new RuntimeException(
+            throw RuntimeException(
               s"inconsistent state: $trip on $min, $middle, $max"
             )
         }
@@ -284,8 +283,8 @@ package object euler {
 
   implicit class FileOps(f: File) {
     def slurp = {
-      val in  = new FileReader(f)
-      val bin = new BufferedReader(in, 4096)
+      val in  = FileReader(f)
+      val bin = BufferedReader(in, 4096)
       Iterator.continually(bin.readLine()).takeWhile { e =>
         val stop = e == null
         if (stop) bin.close()
@@ -298,21 +297,23 @@ package object euler {
 
   lazy val allPrimesLazy = allPrimesLong.to(LazyList)
 
-  def allPrimesLong: Iterator[Long] = {
-    val cacheFile = {
-      val f = new File("resource/primes.data")
+  def openOrCreateFile(name:String) = {
+      val f = File(s"resource/$name.data")
       if (!f.exists()) {
         val ok = f.createNewFile()
         require(ok, s"cannot create ${f.getAbsolutePath}")
       }
       f
-    }
+  }
+
+  def allPrimesLong: Iterator[Long] = {
+    val cacheFile = openOrCreateFile("primes")
 
     var maxPrimeRead = 0L
 
     val fromFile: Iterator[Long] = {
-      val in  = new DataInputStream(
-        new BufferedInputStream(new FileInputStream(cacheFile), 1024 * 1024)
+      val in  = DataInputStream(
+        BufferedInputStream(FileInputStream(cacheFile), 1024 * 1024)
       )
       var row = 0
 
@@ -344,7 +345,7 @@ package object euler {
     }
 
     lazy val writer = {
-      new DataOutputStream(new FileOutputStream(cacheFile, true))
+      DataOutputStream(FileOutputStream(cacheFile, true))
     }
 
     def calculatedRemainingPrimes = {
@@ -419,9 +420,9 @@ package object euler {
     def sqr = l * l
 
     def nice = {
-      val sym = new DecimalFormatSymbols()
+      val sym = DecimalFormatSymbols()
       sym.setGroupingSeparator('.')
-      val df = new DecimalFormat("###,###,###,###", sym)
+      val df = DecimalFormat("###,###,###,###", sym)
       df.format(l)
     }
 
@@ -470,7 +471,7 @@ package object euler {
 
     def sqrtPrecise(scale: Int): BigDecimal = {
       val mc =
-        new java.math.MathContext(scale + 1, java.math.RoundingMode.HALF_UP)
+        java.math.MathContext(scale + 1, java.math.RoundingMode.HALF_UP)
       BigDecimal.decimal(java.math.BigDecimal.valueOf(l).sqrt(mc), mc)
     }
 
@@ -597,15 +598,15 @@ package object euler {
     }
 
     def sqrt(scale: Int) = {
-      val mc = new MathContext(scale + 1, java.math.RoundingMode.HALF_UP)
+      val mc = MathContext(scale + 1, java.math.RoundingMode.HALF_UP)
       BigDecimal.decimal(
-        new java.math.BigDecimal(bi.bigInteger, mc).sqrt(mc),
+        java.math.BigDecimal(bi.bigInteger, mc).sqrt(mc),
         mc
       )
     }
 
     def toBigDecimal = {
-      BigDecimal(new java.math.BigDecimal(bi.bigInteger))
+      BigDecimal(java.math.BigDecimal(bi.bigInteger))
     }
   }
 
@@ -649,7 +650,7 @@ package object euler {
                 a * b + c
               case 2 => on(0)
               case 1 => BigInt(1)
-              case _ => throw new IllegalArgumentException(n.toString)
+              case _ => throw IllegalArgumentException(n.toString)
             }
           }
         )
@@ -684,7 +685,7 @@ package object euler {
     def sqrtPrecise(scale: Int): BigDecimal = {
       java.math.BigDecimal
           .valueOf(d)
-          .sqrt(new java.math.MathContext(scale, java.math.RoundingMode.HALF_UP))
+          .sqrt(java.math.MathContext(scale, java.math.RoundingMode.HALF_UP))
     }
 
     def isNatural: Boolean = {
@@ -699,14 +700,14 @@ package object euler {
     def openOrEval(excuse: => String): T = {
       o match {
         case Some(x) => x
-        case None => throw new RuntimeException(excuse)
+        case None => throw RuntimeException(excuse)
       }
     }
 
     def openOr(excuse: String): T = {
       o match {
         case Some(x) => x
-        case None => throw new RuntimeException(excuse)
+        case None => throw RuntimeException(excuse)
       }
     }
   }
@@ -738,5 +739,56 @@ package object euler {
       remainder = max % min
     }
     min
+  }
+
+
+  def dataReader(name:String) = {
+    val file = openOrCreateFile(s"stream_$name")
+    lazy val stream = DataInputStream(FileInputStream(file))
+    new DataReader:
+      override def processAndClose[T](cb: DataInputStream => T): T = {
+        val ret = cb(stream)
+        stream.close()
+        ret
+      }
+  }
+  def dataWriter(name:String, append:Boolean):DataWriter = {
+    val es = Executors.newSingleThreadExecutor()
+    val file = openOrCreateFile(s"stream_$name")
+    val stream = DataOutputStream(FileOutputStream(file, append))
+    def synced[T](logic : => T) = {
+      es.submit(new Runnable {
+        override def run(): Unit = {
+          logic
+        }
+      })
+    }
+    val ret = new DataWriter:
+
+      override def doWithStream[T](cb: DataOutputStream => T): Unit =
+        synced(cb(stream))
+        
+      override def flush(): Unit =
+        synced(stream.flush())
+
+      override def close(): Unit =
+        synced {
+          es.shutdown()
+          es.awaitTermination(Long.MaxValue, TimeUnit.DAYS)
+          stream.close()
+        }
+    
+    
+    ret
+  }
+
+  trait DataWriter {
+    def doWithStream[T](cb:DataOutputStream => T):Unit
+    def flush():Unit
+    def close():Unit
+  }
+
+  trait DataReader {
+    def processAndClose[T](cb:(DataInputStream) =>T):T
   }
 }

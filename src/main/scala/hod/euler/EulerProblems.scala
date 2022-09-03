@@ -1,7 +1,7 @@
 package hod
 package euler
 
-import java.io.File
+import java.io.{EOFException, File}
 import java.net.URI
 import java.nio.file.{Files, Path}
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
@@ -368,7 +368,7 @@ import scala.util.Random
       } else if (56 <= k && k <= 4000000) {
         ((laggedFibonacci(k - 24) + laggedFibonacci(k - 55) + 1000000) % 1000000 - 500000)
       } else {
-        throw new RuntimeException()
+        throw RuntimeException()
       }
     }
 
@@ -456,7 +456,7 @@ import scala.util.Random
   val max = 20000000
 
   val allNumbers = {
-    bench("Shuffle")(new Random().shuffle(Iterator.from(3).takeWhile(_ <= max).toArray))
+    bench("Shuffle")(Random().shuffle(Iterator.from(3).takeWhile(_ <= max).toArray))
   }
 
   val isPrime = bench("Prep")(dynamicPrimeCheck(max))
@@ -468,22 +468,58 @@ import scala.util.Random
     while ((x * x) % n != 1) {
       x -= 1
     }
-    x
+    x.toInt
   }
 
   val counter = AtomicInteger()
   bench("V2") {
     val (primes, test) = allNumbers.partition(isPrime(_))
+
+    val precalculatedSolutions = dataReader("euler451").processAndClose(in => {
+      val solutions = mutable.HashMap.empty[Int, Int]
+      try {
+        while(true) {
+          val x = in.readInt()
+          val n = in.readInt()
+          solutions.put(n, x)
+        }
+      } catch {
+        case _: EOFException =>
+      }
+      solutions
+    })
+
+    val sum = AtomicLong()
     val primeCount = primes.size
     println(primeCount +" primes")
-    val value          = test.par.map { e =>
-      val sol = biggestSpecialModularInverseV2(e)
+    sum.addAndGet(primeCount)
+    println(precalculatedSolutions.size +" solutions already known")
+    sum.addAndGet(precalculatedSolutions.values.foldLeft(0L)(_+_))
+
+    val todo = test.filterNot(precalculatedSolutions.contains)
+    println(todo.size +" solutions todo")
+    val out = dataWriter("euler451", true)
+    val time = AtomicLong(System.currentTimeMillis())
+    todo.par.foreach { n =>
+      val x = biggestSpecialModularInverseV2(n)
       val i   = counter.incrementAndGet()
-      if (i % 10000 == 0) println(i)
-      //println(s"$sol*$sol % $e = 1 (${sol * sol})")
-      sol
+      val stepSize = 1000
+      if (i % stepSize == 0) {
+        val nju = System.currentTimeMillis()
+        val diff   = nju - time.getAndSet(nju)
+        println(i + " in " + diff + s"ms = ${(diff / stepSize.toDouble)*1000} per second")
+        out.flush()
+      }
+      out.doWithStream { out =>
+        out.writeInt(x)
+        out.writeInt(n)
+      }
+      sum.addAndGet(x)
     }
-    println(primeCount + value.sum)
+
+    out.close()
+
+    println(sum.get())
   }
 
 }
