@@ -497,17 +497,20 @@ import scala.util.Random
     sum.addAndGet(precalculatedSolutions.values.foldLeft(0L)(_+_))
 
     val todo = test.filterNot(precalculatedSolutions.contains)
-    println(todo.size +" solutions todo")
+    val goal = todo.size
+    println(goal +" solutions todo")
     val out = dataWriter("euler451", true)
     val time = AtomicLong(System.currentTimeMillis())
     todo.par.foreach { n =>
       val x = biggestSpecialModularInverseV2(n)
       val i   = counter.incrementAndGet()
-      val stepSize = 1000
+      val stepSize = 10000
       if (i % stepSize == 0) {
         val nju = System.currentTimeMillis()
         val diff   = nju - time.getAndSet(nju)
-        println(i + " in " + diff + s"ms = ${(diff / stepSize.toDouble)*1000} per second")
+        val speed = (stepSize.toDouble / diff) * 1000
+        val remainingTime = (goal - i) / speed
+        println(s"$i in $diff ms = $speed per second, remaining minutes: ${(remainingTime / 60).toInt}")
         out.flush()
       }
       out.doWithStream { out =>
