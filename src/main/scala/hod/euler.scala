@@ -1,6 +1,6 @@
 package hod
 
-import java.io.{BufferedInputStream, BufferedReader, DataInputStream, DataOutputStream, EOFException, File, FileInputStream, FileOutputStream, FileReader}
+import java.io.{BufferedInputStream, BufferedOutputStream, BufferedReader, DataInputStream, DataOutputStream, EOFException, File, FileInputStream, FileOutputStream, FileReader}
 import java.math.{BigInteger, MathContext, RoundingMode}
 import java.text.{DecimalFormat, DecimalFormatSymbols}
 import java.util.concurrent.{Executors, TimeUnit}
@@ -744,7 +744,7 @@ package object euler {
 
   def dataReader(name:String) = {
     val file = openOrCreateFile(s"stream_$name")
-    lazy val stream = DataInputStream(FileInputStream(file))
+    lazy val stream = DataInputStream(BufferedInputStream(FileInputStream(file)))
     new DataReader:
       override def processAndClose[T](cb: DataInputStream => T): T = {
         val ret = cb(stream)
@@ -755,7 +755,7 @@ package object euler {
   def dataWriter(name:String, append:Boolean):DataWriter = {
     val es = Executors.newSingleThreadExecutor()
     val file = openOrCreateFile(s"stream_$name")
-    val stream = DataOutputStream(FileOutputStream(file, append))
+    val stream = DataOutputStream(BufferedOutputStream(FileOutputStream(file, append)))
     def synced[T](logic : => T) = {
       es.submit(new Runnable {
         override def run(): Unit = {
