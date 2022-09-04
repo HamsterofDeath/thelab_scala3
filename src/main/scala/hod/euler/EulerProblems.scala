@@ -531,4 +531,11 @@ import scala.util.Random
 
 }
 
+@main def euler452():Unit = {
+  val cache = mutable.HashMap.empty[(Long,Long), BigInt]
+  def count(upperLimit:Long, tupleSize:Long) = {
+
+  }
+}
+
 
