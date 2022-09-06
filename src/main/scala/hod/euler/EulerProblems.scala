@@ -535,65 +535,62 @@ import scala.util.Random
 @main def euler452(): Unit = {
 
   def lazyCall(n: Int) = {
-    case class Key(remaining: Int, use: Int, details: List[Int])
-    val cache = mutable.HashMap.empty[Key, BigInt]
 
-    def toFactorCounts(factors: List[Int]) = factors.groupBy(identity).values.map(_.size).toList
-                                                    .sorted
+    def toFactorCounts(factors: List[Int]) = {
+      val occ = mutable.HashMap.empty[Int,Int]
+      factors.foreach {i =>
+        occ.get(i) match
+          case Some(value) => occ.put(i,value+1)
+          case None => occ.put(i,1)
+      }
+      occ.values
+    }
 
     def fancyPermutationCount(list: List[Int]) = {
+
       val factorCounts = toFactorCounts(list)
 
-      def fromNBackwards = Iterator.iterate(BigInt(n))(_ - 1)
+      def fromNBackwards(start:BigInt) = Iterator.iterate(start)(_ - 1)
 
       var product   = BigInt(1)
       var slotsLeft = BigInt(n)
       factorCounts.foreach { count =>
-        val smartNumerator   = fromNBackwards.dropWhile(_ > slotsLeft).take(count).product
+        val smartNumerator   = fromNBackwards(slotsLeft).take(count).product
         val smartDenominator = factorial(count)
         val factor           = smartNumerator / smartDenominator
         slotsLeft -= count
         product *= factor
       }
+      //println(s"$product " + "-> "+list)
       product
     }
 
-    def count(maxN: Int, maxFactor: Int, solution: List[Int]): BigInt = {
+    def count(maxN: Int, maxFactor: Int, remainingLength:Int, solution: List[Int]): BigInt = {
 
       def eval: BigInt = {
-        val countDown    = Range(maxFactor, 0, -1)
-        var recycle      = Option.empty[BigInt]
-        var reuseCounter = 0
-        countDown.map { use =>
+        val countDown = Range(maxFactor, 0, -1)
+        var sum = BigInt(0)
+        countDown.foreach { use =>
           val remaining = maxN / use
-          val result    = {
-            if (reuseCounter > 0) {
-              reuseCounter -= 1
-              recycle.get
+          val goDeeper  = use > 1 && remaining >= 1
+          sum += {
+            if (goDeeper) {
+              count(remaining, use min remaining, remainingLength -1, use :: solution)
             } else {
-              val ret = if (use > 1 && remaining >= 1) {
-                count(remaining, use min remaining, if (use > 1) use :: solution else solution)
-              } else {
-                fancyPermutationCount(solution)
-              }
-              reuseCounter = ???
-              recycle = Some(ret)
-              ret
+              fancyPermutationCount(solution)
             }
           }
-          result
-        }.sum
+        }
+        sum
       }
-      //cache.getOrElseUpdate(Key(maxN, maxFactor, Nil), eval)
       eval
     }
 
-    count(n, n, Nil)
+    measured(count(n, n, n, Nil))
   }
 
-  1 to 100 foreach { i =>
-    println(lazyCall(i))
-  }
+  println(lazyCall(1000000) % 1234567891)
+ // println(lazyCall(2000000))
 
 }
 
