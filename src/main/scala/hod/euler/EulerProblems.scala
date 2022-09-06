@@ -532,47 +532,68 @@ import scala.util.Random
 
 }
 
-
 @main def euler452(): Unit = {
-  val cache = mutable.HashMap.empty[(Int, Int), BigInt]
 
+  def lazyCall(n: Int) = {
+    case class Key(remaining: Int, use: Int, details: List[Int])
+    val cache = mutable.HashMap.empty[Key, BigInt]
 
+    def toFactorCounts(factors: List[Int]) = factors.groupBy(identity).values.map(_.size).toList
+                                                    .sorted
 
-  def lazyCall(n:Int) = {
+    def fancyPermutationCount(list: List[Int]) = {
+      val factorCounts = toFactorCounts(list)
 
-    def count(maxN: Int, tupleSize: Int, solution: List[Int]): BigInt = {
-      def fancyPermutationCount(list: List[Int]) = {
-        // todo :(
-        Iterator.iterate(n)(_ - 1)
-                .take(list.size)
-                .foldLeft(BigInt(1))(_*_)
+      def fromNBackwards = Iterator.iterate(BigInt(n))(_ - 1)
+
+      var product   = BigInt(1)
+      var slotsLeft = BigInt(n)
+      factorCounts.foreach { count =>
+        val smartNumerator   = fromNBackwards.dropWhile(_ > slotsLeft).take(count).product
+        val smartDenominator = factorial(count)
+        val factor           = smartNumerator / smartDenominator
+        slotsLeft -= count
+        product *= factor
       }
-
-      def eval: BigInt = {
-        if (maxN == 1 || tupleSize == 0)
-          println(solution)
-          fancyPermutationCount(solution)
-        else {
-          val countDown = (1 to maxN).reverse
-          countDown.map { use =>
-            val remaining = (maxN / use) min use
-            count(remaining, tupleSize - 1, if(use>1) use :: solution else solution)
-          }.sum
-        }
-      }
-      //cache.getOrElseUpdate((maxN, tupleSize), eval)
-      eval
-
+      product
     }
 
-    count(n,n, Nil)
+    def count(maxN: Int, maxFactor: Int, solution: List[Int]): BigInt = {
+
+      def eval: BigInt = {
+        val countDown    = Range(maxFactor, 0, -1)
+        var recycle      = Option.empty[BigInt]
+        var reuseCounter = 0
+        countDown.map { use =>
+          val remaining = maxN / use
+          val result    = {
+            if (reuseCounter > 0) {
+              reuseCounter -= 1
+              recycle.get
+            } else {
+              val ret = if (use > 1 && remaining >= 1) {
+                count(remaining, use min remaining, if (use > 1) use :: solution else solution)
+              } else {
+                fancyPermutationCount(solution)
+              }
+              reuseCounter = ???
+              recycle = Some(ret)
+              ret
+            }
+          }
+          result
+        }.sum
+      }
+      //cache.getOrElseUpdate(Key(maxN, maxFactor, Nil), eval)
+      eval
+    }
+
+    count(n, n, Nil)
   }
 
   1 to 100 foreach { i =>
     println(lazyCall(i))
   }
-
-  println(cache.size)
 
 }
 
