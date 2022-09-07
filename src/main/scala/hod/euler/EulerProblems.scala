@@ -535,14 +535,14 @@ import scala.util.Random
 @main def euler452(): Unit = {
 
   def lazyCall(n: Int) = {
-
     class Track {
-      class NumberAndOccurences(var n:Int, var count:Int)
-      private val data               = Array.fill[NumberAndOccurences](50)(NumberAndOccurences(0,0))
-      private var cursor             = -1;
+      class NumberAndOccurences(var n: Int, var count: Int)
+      private val data   = Array.fill[NumberAndOccurences](50)(NumberAndOccurences(0, 0))
+      private var cursor = -1;
+      private var hashPart = BigInt(0)
 
       private def currrentlyPilingUp = {
-        if(cursor>=0) data(cursor).n else Int.MaxValue
+        if (cursor >= 0) data(cursor).n else Int.MaxValue
       }
       def push(n: Int): Unit = {
         if (currrentlyPilingUp > n) {
@@ -552,97 +552,115 @@ import scala.util.Random
         } else {
           data(cursor).count += 1
         }
-       // println(s"push $n = $currrentlyPilingUp, $cursor, ${occurrences.toList},${debug.toList}")
       }
       def pop(): Unit = {
+
         data(cursor).count -= 1
         if (data(cursor).count == 0) {
           cursor -= 1
         }
-       // println(s"pop = $currrentlyPilingUp, $cursor, ${occurrences.toList},${debug.toList}")
       }
 
-      @inline def occurrences[T](f:Int=>T) = {
-        var i = 0
-        while(i<=cursor) {
-          f(data(i).count)
-          i+=1
+      def occurrences = {
+        new Iterable[Int] {
+          override def iterator: Iterator[Int] = new Iterator[Int]:
+            private var i = 0
+            override def hasNext: Boolean = i <= cursor
+            override def next(): Int = {
+              val ret = data(i).count
+              i += 1
+              ret
+            }
         }
+      }
+
+      private val shiftFactor = (Math.log(n) / Math.log(2)).toInt
+      println(s"Shift factor is $shiftFactor")
+
+      def uniqueHash = {
+        var result = BigInt(0)
+        occurrences.foreach { count =>
+          result += count
+          result *= shiftFactor
+        }
+        result
       }
     }
 
     val helper = Track()
+    val zero = BigInt(0)
+    val one = BigInt(1)
 
-//    helper.push(5)
-//    helper.push(5)
-//    helper.push(5)
-//    helper.push(5)
-//    helper.push(4)
-//    helper.push(4)
-//    helper.push(4)
-//    helper.push(1)
-//    helper.pop()
-//    helper.pop()
-//    helper.push(3)
-//    println(helper.occurrences.toList)
-
+    val permsCache = mutable.HashMap.empty[BigInt,BigInt]
     def fancyPermutationCount = {
 
-      def fromNBackwards(start: BigInt) = Iterator.iterate(start)(_ - 1)
+      def eval = {
+        def fromNBackwards(start: BigInt) = Iterator.iterate(start)(_ - 1)
 
-      var product   = BigInt(1)
-      var slotsLeft = BigInt(n)
-      helper.occurrences { count =>
-        val smartNumerator   = fromNBackwards(slotsLeft).take(count).product
-        val smartDenominator = factorial(count)
-        val factor           = smartNumerator / smartDenominator
-        slotsLeft -= count
-        product *= factor
-      }
-      product
-    }
-
-    def count(maxN: Int, maxFactor: Int, remainingLength: Int): BigInt = {
-
-      def eval: BigInt = {
-        val countDown  = Range(maxFactor, 0, -1)
-        var sum        = BigInt(0)
-        var lastResult = BigInt(0)
-        countDown.foreach { use =>
-          val remaining = maxN / use
-          val goDeeper  = use > 1 && remaining >= 1
-          sum += {
-            val subResult = {
-              if (goDeeper) {
-                helper.push(use)
-                val ret = count(remaining, use min remaining, remainingLength - 1)
-                helper.pop()
-                ret
-              } else {
-                fancyPermutationCount
-              }
-            }
-//            if (subResult != lastResult) {
-//              println(
-//                s"Switch at $maxN, $maxFactor,$remainingLength,$use,$remaining, $solution => " +
-//                s"$subResult (from $lastResult)")
-//              lastResult = subResult
-//            }
-            subResult
-          }
+        var product   = one
+        var slotsLeft = BigInt(n)
+        helper.occurrences.foreach { count =>
+          val smartNumerator   = fromNBackwards(slotsLeft).take(count).product
+          val smartDenominator = factorial(count)
+          val factor           = smartNumerator / smartDenominator
+          slotsLeft -= count
+          product *= factor
         }
-        sum
+        product
       }
+      permsCache.getOrElseUpdate(helper.uniqueHash, eval)
 
-      eval
     }
 
-    measured(count(n, n, n))
+
+    def count(maxN: Int, maxFactor: Int): BigInt = {
+      val countDown = Range(maxFactor, 0, -1)
+
+      var sum        = zero
+      var lastResult = zero
+      var lastFactorA = 0
+      var lastFactorB = 0
+      countDown.foreach { use =>
+        val remaining      = maxN / use
+        val additionalFactor  = maxFactor / use
+        val factorSwitched = remaining != lastFactorA ||
+                              additionalFactor != lastFactorB ||
+                              additionalFactor == 1
+        lastFactorA = remaining
+        lastFactorB = additionalFactor
+
+
+
+
+        sum += {
+          val subResult = {
+            if (factorSwitched) {
+              val newResult = {
+                val goDeeper = use > 1 && remaining >= 1
+                if (goDeeper) {
+                  helper.push(use)
+                  val actual = count(remaining, use min remaining)
+                  helper.pop()
+                  actual
+                } else {
+                  fancyPermutationCount
+                }
+              }
+              lastResult = newResult
+            }
+            lastResult
+          }
+
+          subResult
+        }
+      }
+      sum
+    }
+
+    measured(count(n, n))
   }
 
-  println(lazyCall(1000000) % 1234567891)
-  // println(lazyCall(2000000))
-  //lazyCall(1,true)
+  println(lazyCall(5000000) % 1234567891)
 
 }
 
