@@ -536,61 +536,113 @@ import scala.util.Random
 
   def lazyCall(n: Int) = {
 
-    def toFactorCounts(factors: List[Int]) = {
-      val occ = mutable.HashMap.empty[Int,Int]
-      factors.foreach {i =>
-        occ.get(i) match
-          case Some(value) => occ.put(i,value+1)
-          case None => occ.put(i,1)
+    class Track {
+      class NumberAndOccurences(var n:Int, var count:Int)
+      private val data               = Array.fill[NumberAndOccurences](50)(NumberAndOccurences(0,0))
+      private var cursor             = -1;
+
+      private def currrentlyPilingUp = {
+        if(cursor>=0) data(cursor).n else Int.MaxValue
       }
-      occ.values
+      def push(n: Int): Unit = {
+        if (currrentlyPilingUp > n) {
+          cursor += 1
+          data(cursor).count = 1
+          data(cursor).n = n
+        } else {
+          data(cursor).count += 1
+        }
+       // println(s"push $n = $currrentlyPilingUp, $cursor, ${occurrences.toList},${debug.toList}")
+      }
+      def pop(): Unit = {
+        data(cursor).count -= 1
+        if (data(cursor).count == 0) {
+          cursor -= 1
+        }
+       // println(s"pop = $currrentlyPilingUp, $cursor, ${occurrences.toList},${debug.toList}")
+      }
+
+      @inline def occurrences[T](f:Int=>T) = {
+        var i = 0
+        while(i<=cursor) {
+          f(data(i).count)
+          i+=1
+        }
+      }
     }
 
-    def fancyPermutationCount(list: List[Int]) = {
+    val helper = Track()
 
-      val factorCounts = toFactorCounts(list)
+//    helper.push(5)
+//    helper.push(5)
+//    helper.push(5)
+//    helper.push(5)
+//    helper.push(4)
+//    helper.push(4)
+//    helper.push(4)
+//    helper.push(1)
+//    helper.pop()
+//    helper.pop()
+//    helper.push(3)
+//    println(helper.occurrences.toList)
 
-      def fromNBackwards(start:BigInt) = Iterator.iterate(start)(_ - 1)
+    def fancyPermutationCount = {
+
+      def fromNBackwards(start: BigInt) = Iterator.iterate(start)(_ - 1)
 
       var product   = BigInt(1)
       var slotsLeft = BigInt(n)
-      factorCounts.foreach { count =>
+      helper.occurrences { count =>
         val smartNumerator   = fromNBackwards(slotsLeft).take(count).product
         val smartDenominator = factorial(count)
         val factor           = smartNumerator / smartDenominator
         slotsLeft -= count
         product *= factor
       }
-      //println(s"$product " + "-> "+list)
       product
     }
 
-    def count(maxN: Int, maxFactor: Int, remainingLength:Int, solution: List[Int]): BigInt = {
+    def count(maxN: Int, maxFactor: Int, remainingLength: Int): BigInt = {
 
       def eval: BigInt = {
-        val countDown = Range(maxFactor, 0, -1)
-        var sum = BigInt(0)
+        val countDown  = Range(maxFactor, 0, -1)
+        var sum        = BigInt(0)
+        var lastResult = BigInt(0)
         countDown.foreach { use =>
           val remaining = maxN / use
           val goDeeper  = use > 1 && remaining >= 1
           sum += {
-            if (goDeeper) {
-              count(remaining, use min remaining, remainingLength -1, use :: solution)
-            } else {
-              fancyPermutationCount(solution)
+            val subResult = {
+              if (goDeeper) {
+                helper.push(use)
+                val ret = count(remaining, use min remaining, remainingLength - 1)
+                helper.pop()
+                ret
+              } else {
+                fancyPermutationCount
+              }
             }
+//            if (subResult != lastResult) {
+//              println(
+//                s"Switch at $maxN, $maxFactor,$remainingLength,$use,$remaining, $solution => " +
+//                s"$subResult (from $lastResult)")
+//              lastResult = subResult
+//            }
+            subResult
           }
         }
         sum
       }
+
       eval
     }
 
-    measured(count(n, n, n, Nil))
+    measured(count(n, n, n))
   }
 
   println(lazyCall(1000000) % 1234567891)
- // println(lazyCall(2000000))
+  // println(lazyCall(2000000))
+  //lazyCall(1,true)
 
 }
 
