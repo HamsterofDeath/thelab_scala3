@@ -601,7 +601,8 @@ import scala.util.Random
       def uniqueHash = encodedOccurences
     }
 
-    case class Key(maxN: Int, maxFactor: Int, product: Int, hash: Long, current: Int)
+    case class Key(factors: Long, product: Long, hash:Long)
+    //case class Key(a:Int,b:Int,c:Int,d:Int,e:Long)
     val cache = mutable.HashMap.empty[Key, BigInt]
 
     val helper = Track()
@@ -675,7 +676,16 @@ import scala.util.Random
         sum
       }
 
-      val key = Key(maxN, maxFactor, helper.productSoFar, helper.uniqueHash,       helper.currrentlyPilingUp)
+      val key = Key(
+        (maxN.toLong << 32) | maxFactor,
+        (helper.productSoFar.toLong << 32) | helper.currrentlyPilingUp,
+        helper.uniqueHash
+      )
+//      val key = Key(
+//        (maxN << 32) | maxFactor,
+//        helper.uniqueHash,
+//        (helper.productSoFar << 32) | helper.currrentlyPilingUp
+//      )
       cache.getOrElseUpdate(key, eval)
     }
 
@@ -686,11 +696,11 @@ import scala.util.Random
     }
   }
 
-  //  println(lazyCall(1000000000) % 1234567891)
+    println(lazyCall(1000000000) % 1234567891)
   //println(lazyCall(20000000) % 1234567891)
   //println(lazyCall(50000000) % 1234567891)
-    println(lazyCall(100000000) % 1234567891)
-  //  println(lazyCall(1000000) % 1234567891)
+    //println(lazyCall(100000000) % 1234567891)
+    //println(lazyCall(1000000) % 1234567891)
   //println(lazyCall(30000000) % 1234567891)
 
 }
