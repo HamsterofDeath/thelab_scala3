@@ -629,9 +629,6 @@ import scala.util.Random
         lastFactorA = remaining
         lastFactorB = additionalFactor
 
-
-
-
         sum += {
           val subResult = {
             if (factorSwitched) {
@@ -660,7 +657,10 @@ import scala.util.Random
     measured(count(n, n))
   }
 
-  println(lazyCall(5000000) % 1234567891)
+  println(lazyCall(1000000) % 1234567891)
+  println(lazyCall(1000000) % 1234567891)
+  println(lazyCall(1000000) % 1234567891)
+  println(lazyCall(1000000) % 1234567891)
 
 }
 
