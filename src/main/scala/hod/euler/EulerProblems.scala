@@ -28,10 +28,10 @@ import scala.util.Random
 }
 
 @main def euler107(): Unit = {
-  val txt             = "resource/network.txt"
-  val size            = 40
+  val txt = "resource/network.txt"
+  val size = 40
   val originalNetwork = {
-    var row  = 0
+    var row = 0
     val data = Array.ofDim[Option[Int]](size, size)
     Files
       .lines(File(txt).toPath)
@@ -49,7 +49,7 @@ import scala.util.Random
 
   def optimize(network: IndexedSeq[IndexedSeq[Option[Int]]]) = {
     val stillOpen = mutable.HashSet.empty[Int] ++= 1 until size
-    val covered   = mutable.HashSet.empty[Int] += 0
+    val covered = mutable.HashSet.empty[Int] += 0
 
     def findNextShortest = {
       val candidates = covered.map { i =>
@@ -87,31 +87,31 @@ import scala.util.Random
   }
 
   val betterNetwork = optimize(originalNetwork)
-  val initialCost   = originalNetwork.map(_.map(_.getOrElse(0)).sum).sum / 2
+  val initialCost = originalNetwork.map(_.map(_.getOrElse(0)).sum).sum / 2
   val optimizedCost = betterNetwork.map(_.cost).sum
-  val saved         = initialCost - optimizedCost
+  val saved = initialCost - optimizedCost
   println(initialCost)
   println(optimizedCost)
   println(saved)
 }
 
 @main def euler359(): Unit = {
-  val fxr     = 71328803586048L
-  val limit   = math.sqrt(fxr).toLong
+  val fxr = 71328803586048L
+  val limit = math.sqrt(fxr).toLong
   val factors = {
     Iterator.iterate(1L) {
       _ + 1
     }
-            .takeWhile(_ <= limit)
-            .flatMap { i =>
-              if (fxr % i == 0) {
-                List((i, fxr / i), (fxr / i, i))
-              } else {
-                Nil
-              }
-            }.toList
-            .distinct
-            .sorted
+      .takeWhile(_ <= limit)
+      .flatMap { i =>
+        if (fxr % i == 0) {
+          List((i, fxr / i), (fxr / i, i))
+        } else {
+          Nil
+        }
+      }.toList
+      .distinct
+      .sorted
   }
 
   factors.foreach(println)
@@ -120,8 +120,8 @@ import scala.util.Random
 @main def euler230(): Unit = {
   val cache = mutable.HashMap.empty[Int, Long]
 
-  val A  = 'A'
-  val B  = 'B'
+  val A = 'A'
+  val B = 'B'
   val ab = List(A, B)
 
   def stupidSequenceGenerate(n: Int): String = ab(n).toString
@@ -140,7 +140,7 @@ import scala.util.Random
   }
 
   val lookupLimit = 2
-  val lookUp      = List.tabulate(lookupLimit)(stupidSequenceGenerate)
+  val lookUp = List.tabulate(lookupLimit)(stupidSequenceGenerate)
 
   val maxN = 17
 
@@ -148,10 +148,10 @@ import scala.util.Random
     ((127 + 19 * n) * BigInt(7).pow(n)).bigInteger.longValueExact()
   }
 
-  val test        = false
-  val a           = if (test) "1415926535" else
+  val test = false
+  val a = if (test) "1415926535" else
     "1415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679"
-  val b           = if (test) "8979323846" else
+  val b = if (test) "8979323846" else
     "8214808651328230664709384460955058223172535940812848111745028410270193852110555964462294895493038196"
   val elementSize = a.length
 
@@ -162,12 +162,12 @@ import scala.util.Random
         lookUp(sequenceIndex)(nInSequence.toInt) == A
       } else {
         val leftSubSequenceIndex = sequenceIndex - 2
-        val isInLeftPart         = nInSequence < fib(leftSubSequenceIndex)
+        val isInLeftPart = nInSequence < fib(leftSubSequenceIndex)
         if (isInLeftPart) {
           solveForTuple(nInSequence, leftSubSequenceIndex)
         } else {
           val rightSubSequenceIndex = leftSubSequenceIndex + 1
-          val newIndex              = nInSequence - fib(leftSubSequenceIndex)
+          val newIndex = nInSequence - fib(leftSubSequenceIndex)
           solveForTuple(newIndex, rightSubSequenceIndex)
         }
       }
@@ -179,9 +179,9 @@ import scala.util.Random
 
   def dab(n: Long): Int = {
     val indexOnCompressedSequence = n / elementSize
-    val remainder                 = (n % elementSize)
+    val remainder = (n % elementSize)
     require(remainder.isValidInt)
-    val isA       = solveFor(indexOnCompressedSequence)
+    val isA = solveFor(indexOnCompressedSequence)
     val character = if (isA) {
       a(remainder.toInt)
     } else {
@@ -235,7 +235,7 @@ import scala.util.Random
           case 19 => "nineteen"
         }
       case n if n <= 99 =>
-        val left   = n / 10 match {
+        val left = n / 10 match {
           case 2 => "twenty"
           case 3 => "thirty"
           case 4 => "forty"
@@ -264,7 +264,7 @@ import scala.util.Random
 }
 
 @main def euler5(): Unit = {
-  val test     = 1 to 20
+  val test = 1 to 20
   val solution = Iterator.from(1).find { e =>
     val candidate = e * 20L
     test.forall(candidate % _ == 0)
@@ -276,8 +276,8 @@ import scala.util.Random
   def isReducedProperFraction(n: Int, d: Int) = 1 == gcdEuclid(n, d)
 
   def gcdEuclid(a: Int, b: Int) = {
-    var max       = Math.max(a, b)
-    var min       = Math.min(a, b)
+    var max = Math.max(a, b)
+    var min = Math.min(a, b)
     var remainder = max % min
     while (remainder != 0) {
       max = min
@@ -289,13 +289,13 @@ import scala.util.Random
 
   def isASmallerThanB(n1: Int, d1: Int, n2: Int, d2: Int) = n1 * d2.toLong < n2 * d1.toLong
 
-  val ds       = 1 to 12000
+  val ds = 1 to 12000
   val solution = ds.map { d =>
     val ns = (d / 3) to (d / 2)
     ns.count { n =>
       isASmallerThanB(1, 3, n, d) &&
-      isASmallerThanB(n, d, 1, 2) &&
-      isReducedProperFraction(n, d)
+        isASmallerThanB(n, d, 1, 2) &&
+        isReducedProperFraction(n, d)
     }
   }.sum
   println(solution)
@@ -319,7 +319,7 @@ import scala.util.Random
       ((tw, th), totalPlacements.sum)
     }
   }
-  val best     = solution.toList.minBy(e => (2000000 - e._2).abs)._1
+  val best = solution.toList.minBy(e => (2000000 - e._2).abs)._1
   println(best._1 * best._2)
 }
 
@@ -329,9 +329,9 @@ import scala.util.Random
 
     def seen(a: Int, b: Int, c: Int) = a == 1 && b == 1 && c == 1
 
-    var extra          = true
+    var extra = true
     var circleDetected = false
-    var endDetected    = false
+    var endDetected = false
     Iterator.continually {
       val next = (a + b + c) % modBy
       a = b
@@ -342,7 +342,7 @@ import scala.util.Random
       endDetected |= e == 0
       circleDetected |= seen(a, b, c)
       val stopAfterThis = endDetected || circleDetected
-      val includeNext   = !stopAfterThis || extra
+      val includeNext = !stopAfterThis || extra
       if (stopAfterThis) {
         extra = false
       }
@@ -378,7 +378,7 @@ import scala.util.Random
   }
 
   //val boxSize  = 4
-  val boxSize  = 2000
+  val boxSize = 2000
   val sequence = {
     println("prep")
     1 to boxSize * boxSize map { k => laggedFibonacci(k) }
@@ -392,8 +392,8 @@ import scala.util.Random
   def largestSubSum(sequence: Iterator[Int]) = {
     if (sequence.isEmpty) 0 else {
       var largestLeftSum = 0L
-      var first          = true
-      var totalMax       = Long.MinValue
+      var first = true
+      var totalMax = Long.MinValue
       sequence.foreach { next =>
         if (first) {
           largestLeftSum = next
@@ -414,31 +414,31 @@ import scala.util.Random
     def range = 0 until boxSize
 
     largest = range.map { colOrRow =>
-      val first  = largestSubSum(range.iterator.map(xOrY => numberAt(colOrRow, xOrY)))
+      val first = largestSubSum(range.iterator.map(xOrY => numberAt(colOrRow, xOrY)))
       val second = largestSubSum(range.iterator.map(xOrY => numberAt(xOrY, colOrRow)))
       first max second
     }.max
 
     largest = largest max (0 until 2 * boxSize).map { i =>
-      val edgeX       = 0 max (i - boxSize)
+      val edgeX = 0 max (i - boxSize)
       val mirrorEdgeX = boxSize - edgeX - 1
-      val edgeY       = i min (boxSize - 1)
+      val edgeY = i min (boxSize - 1)
 
       def coordinatesSlash(startX: Int, startY: Int) = {
         Iterator.iterate((startX, startY))((x: Int, y: Int) => (x + 1, y - 1))
-                .takeWhile((x, y) => x < boxSize && y >= 0)
+          .takeWhile((x, y) => x < boxSize && y >= 0)
       }
 
       def coordinatesBackSlash(startX: Int, startY: Int) = {
         Iterator.iterate((startX, startY))((x: Int, y: Int) => (x + 1, y + 1))
-                .takeWhile((x, y) => x < boxSize && y < boxSize)
+          .takeWhile((x, y) => x < boxSize && y < boxSize)
       }
 
       def allCoordinatesSlash = coordinatesSlash(edgeX, edgeY)
 
       def allCoordinatesBackSlash = coordinatesBackSlash(mirrorEdgeX, edgeY)
 
-      val first  = largestSubSum(allCoordinatesSlash.map { (x, y) => numberAt(x, y) })
+      val first = largestSubSum(allCoordinatesSlash.map { (x, y) => numberAt(x, y) })
       val second = largestSubSum(allCoordinatesBackSlash.map { (x, y) => numberAt(x, y) })
       first max second
     }.max
@@ -465,7 +465,7 @@ import scala.util.Random
 
   def biggestSpecialModularInverseV2(n: Int) = {
     val max = n - 2
-    var x   = max.toLong
+    var x = max.toLong
 
     while ((x * x) % n != 1) {
       x -= 1
@@ -493,7 +493,7 @@ import scala.util.Random
       solutions
     })
 
-    val sum        = AtomicLong()
+    val sum = AtomicLong()
     val primeCount = primes.size
     println(primeCount + " primes")
     sum.addAndGet(primeCount)
@@ -503,16 +503,16 @@ import scala.util.Random
     val todo = test.filterNot(precalculatedSolutions.contains)
     val goal = todo.size
     println(goal + " solutions todo")
-    val out  = dataWriter("euler451", true)
+    val out = dataWriter("euler451", true)
     val time = AtomicLong(System.currentTimeMillis())
     todo.par.foreach { n =>
-      val x        = biggestSpecialModularInverseV2(n)
-      val i        = counter.incrementAndGet()
+      val x = biggestSpecialModularInverseV2(n)
+      val i = counter.incrementAndGet()
       val stepSize = 10000
       if (i % stepSize == 0) {
-        val nju           = System.currentTimeMillis()
-        val diff          = nju - time.getAndSet(nju)
-        val speed         = (stepSize.toDouble / diff) * 1000
+        val nju = System.currentTimeMillis()
+        val diff = nju - time.getAndSet(nju)
+        val speed = (stepSize.toDouble / diff) * 1000
         val remainingTime = (goal - i) / speed
         println(
           s"$i in $diff ms = $speed per second, remaining minutes: ${(remainingTime / 60).toInt}")
@@ -535,15 +535,20 @@ import scala.util.Random
 @main def euler452(): Unit = {
 
   def lazyCall(n: Int) = {
+    val zero = BigInt(0)
+    val one = BigInt(1)
+
+    var leafs = 0L
     class Track {
       class NumberAndOccurences(var n: Int, var count: Int)
-      private val data   = Array.fill[NumberAndOccurences](50)(NumberAndOccurences(0, 0))
+
+      private val data = Array.fill[NumberAndOccurences](50)(NumberAndOccurences(0, 0))
       private var cursor = -1;
-      private var hashPart = BigInt(0)
 
       private def currrentlyPilingUp = {
         if (cursor >= 0) data(cursor).n else Int.MaxValue
       }
+
       def push(n: Int): Unit = {
         if (currrentlyPilingUp > n) {
           cursor += 1
@@ -553,8 +558,8 @@ import scala.util.Random
           data(cursor).count += 1
         }
       }
-      def pop(): Unit = {
 
+      def pop(): Unit = {
         data(cursor).count -= 1
         if (data(cursor).count == 0) {
           cursor -= 1
@@ -563,9 +568,11 @@ import scala.util.Random
 
       def occurrences = {
         new Iterable[Int] {
-          override def iterator: Iterator[Int] = new Iterator[Int]:
+          override def iterator: Iterator[Int] = new Iterator[Int] :
             private var i = 0
+
             override def hasNext: Boolean = i <= cursor
+
             override def next(): Int = {
               val ret = data(i).count
               i += 1
@@ -578,7 +585,7 @@ import scala.util.Random
       println(s"Shift factor is $shiftFactor")
 
       def uniqueHash = {
-        var result = BigInt(0)
+        var result = one
         occurrences.foreach { count =>
           result += count
           result *= shiftFactor
@@ -588,50 +595,50 @@ import scala.util.Random
     }
 
     val helper = Track()
-    val zero = BigInt(0)
-    val one = BigInt(1)
 
-    val permsCache = mutable.HashMap.empty[BigInt,BigInt]
+    val permsCache = mutable.HashMap.empty[BigInt, BigInt]
+
     def fancyPermutationCount = {
+      leafs += 1
 
       def eval = {
         def fromNBackwards(start: BigInt) = Iterator.iterate(start)(_ - 1)
 
-        var product   = one
+        var product = one
         var slotsLeft = BigInt(n)
         helper.occurrences.foreach { count =>
-          val smartNumerator   = fromNBackwards(slotsLeft).take(count).product
+          val smartNumerator = fromNBackwards(slotsLeft).take(count).product
           val smartDenominator = factorial(count)
-          val factor           = smartNumerator / smartDenominator
+          val factor = smartNumerator / smartDenominator
           slotsLeft -= count
           product *= factor
         }
         product
       }
+
       permsCache.getOrElseUpdate(helper.uniqueHash, eval)
-
     }
-
 
     def count(maxN: Int, maxFactor: Int): BigInt = {
       val countDown = Range(maxFactor, 0, -1)
 
-      var sum        = zero
+      var sum = zero
       var lastResult = zero
       var lastFactorA = 0
       var lastFactorB = 0
       countDown.foreach { use =>
-        val remaining      = maxN / use
-        val additionalFactor  = maxFactor / use
+        val remaining = maxN / use
+        val additionalFactor = maxFactor / use
         val factorSwitched = remaining != lastFactorA ||
-                              additionalFactor != lastFactorB ||
-                              additionalFactor == 1
+          additionalFactor != lastFactorB ||
+          additionalFactor == 1
         lastFactorA = remaining
         lastFactorB = additionalFactor
 
         sum += {
           val subResult = {
             if (factorSwitched) {
+
               val newResult = {
                 val goDeeper = use > 1 && remaining >= 1
                 if (goDeeper) {
@@ -654,13 +661,16 @@ import scala.util.Random
       sum
     }
 
-    measured(count(n, n))
+    measured {
+      val ret = count(n, n)
+      println(s"Leafs: $leafs")
+      ret
+    }
   }
 
+  println(lazyCall(100000) % 1234567891)
   println(lazyCall(1000000) % 1234567891)
-  println(lazyCall(1000000) % 1234567891)
-  println(lazyCall(1000000) % 1234567891)
-  println(lazyCall(1000000) % 1234567891)
+  println(lazyCall(10000000) % 1234567891)
 
 }
 
