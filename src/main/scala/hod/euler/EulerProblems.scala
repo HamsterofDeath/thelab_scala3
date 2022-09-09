@@ -552,14 +552,12 @@ import scala.util.Random
       private var encodedOccurences = 0L //BigInt(0)
       private var cursor = -1;
       private val data = Array.fill[Int](maxCount)(0)
-      private var product = 1
 
       def currrentlyPilingUp = {
         if (cursor >= 0) data(cursor) else Int.MaxValue
       }
 
       def push(n: Int): Unit = {
-        product *= n
         if (currrentlyPilingUp > n) {
           encodedOccurences *= shiftFactor
           encodedOccurences += 1
@@ -573,15 +571,12 @@ import scala.util.Random
       def depth = cursor
 
       def pop(): Unit = {
-        product /= n
         encodedOccurences -= 1
         if (encodedOccurences % shiftFactor == 0) {
           cursor -= 1
           encodedOccurences /= shiftFactor
         }
       }
-
-      def productSoFar = product
 
       def occurrences = {
         new Iterable[Int] {
@@ -601,7 +596,7 @@ import scala.util.Random
       def uniqueHash = encodedOccurences
     }
 
-    case class Key(factors: Long, product: Long, hash: Long)
+    case class Key(factors: Long, current: Int, hash: Long)
     val cache = mutable.HashMap.empty[Key, BigInt]
 
     val helper = Track()
@@ -678,7 +673,7 @@ import scala.util.Random
       if (helper.depth > 0) {
         val key = Key(
           (maxN.toLong << 32) | maxFactor,
-          (helper.productSoFar.toLong << 32) | helper.currrentlyPilingUp,
+          helper.currrentlyPilingUp,
           helper.uniqueHash
         )
         cache.getOrElseUpdate(key, eval)
