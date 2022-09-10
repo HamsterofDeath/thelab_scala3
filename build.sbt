@@ -4,8 +4,7 @@ ThisBuild / scalaVersion := "3.1.0"
 
 lazy val root = (project in file("."))
   .settings(
-    name := "thelabv2",
-    idePackagePrefix := Some("hod.euler")
+    name := "thelabv2"
   )
 
 libraryDependencies +=
