@@ -1,6 +1,7 @@
 package hod
 
-import java.io.{BufferedInputStream, BufferedOutputStream, BufferedReader, DataInputStream, DataOutputStream, EOFException, File, FileInputStream, FileOutputStream, FileReader}
+import java.io.{BufferedInputStream, BufferedOutputStream, BufferedReader, DataInputStream, 
+  DataOutputStream, EOFException, File, FileInputStream, FileOutputStream, FileReader}
 import java.math.{BigInteger, MathContext, RoundingMode}
 import java.text.{DecimalFormat, DecimalFormatSymbols}
 import java.util.concurrent.{Executors, TimeUnit}
@@ -297,13 +298,13 @@ package object euler {
 
   lazy val allPrimesLazy = allPrimesLong.to(LazyList)
 
-  def openOrCreateFile(name:String) = {
-      val f = File(s"resource/$name.data")
-      if (!f.exists()) {
-        val ok = f.createNewFile()
-        require(ok, s"cannot create ${f.getAbsolutePath}")
-      }
-      f
+  def openOrCreateFile(name: String) = {
+    val f = File(s"resource/$name.data")
+    if (!f.exists()) {
+      val ok = f.createNewFile()
+      require(ok, s"cannot create ${f.getAbsolutePath}")
+    }
+    f
   }
 
   def allPrimesLong: Iterator[Long] = {
@@ -393,33 +394,16 @@ package object euler {
     def allValuesDistinct = i.toSet.size == i.size
   }
 
-  implicit class IntOps(val i: Int) extends AnyVal {
-
-    def isPrime: Boolean = {
-      if (i % 2 == 0) return i == 2
-      if (i % 3 == 0) return i == 3
-      val sqrtn = Math.sqrt(i)
-      var j     = 5
-      var step  = 4
-      while (j <= sqrtn) {
-        if (i % j == 0) return false
-        step = 6 - step
-        j += step
-      }
-      true
-    }
-
-    def nice = {
-      i.toLong.nice
-    }
-
-  }
-
-  implicit class LongOps(val l: Long) extends AnyVal {
+  extension (l: Long) {
 
     def sqr = l * l
 
-    def nice = {
+    def toIntSafe = {
+      require(l.toInt == l)
+      l.toInt
+    }
+
+    def readable: String = {
       val sym = DecimalFormatSymbols()
       sym.setGroupingSeparator('.')
       val df = DecimalFormat("###,###,###,###", sym)
@@ -427,6 +411,10 @@ package object euler {
     }
 
     def allDigits = l.toString.iterator.map(_.getNumericValue)
+
+    def digitCount: Int = allDigits.size
+
+    def withReversedDigits: Long = allDigitsReversed.foldLeft(0L)((acc, e) => acc * 10 + e)
 
     def pow(n: Int): Long = {
       n match {
@@ -445,17 +433,10 @@ package object euler {
     def powSafe(n: Int): BigInt = {
       n match {
         case 0 => BigInt(1)
-        case _ =>
-          var ret = BigInt(l)
-          var i   = 1
-          while (i < n) {
-            ret *= l
-            i += 1
-          }
-          ret
+        case _ => BigInt(l).pow(n)
       }
     }
-
+    
     def allDigitsReversed: Iterator[Int] = {
       var number = l
       Iterator
@@ -533,7 +514,29 @@ package object euler {
     }
   }
 
-  implicit class IteratorOps[T](val it: Iterator[T]) extends AnyVal {
+  extension (i: Int) {
+    def isPrime: Boolean = {
+      if (i % 2 == 0) return i == 2
+      if (i % 3 == 0) return i == 3
+      val sqrtn = Math.sqrt(i)
+      var j     = 5
+      var step  = 4
+      while (j <= sqrtn) {
+        if (i % j == 0) return false
+        step = 6 - step
+        j += step
+      }
+      true
+    }
+
+    def readable: String = {
+      i.toLong.readable
+    }
+
+  }
+
+
+  extension[T] (it: Iterator[T]) {
 
     def memoizedByIndex: Int => T = {
       val cache        = mutable.HashMap.empty[Int, T]
@@ -549,7 +552,7 @@ package object euler {
       }
     }
 
-    def takeWhilePlusOne(filter: T => Boolean) = stopAfter(e => !filter(e))
+    def takeWhilePlusOne(filter: T => Boolean): Iterator[T] = stopAfter(e => !filter(e))
 
     def stopAfter(isLastAccepted: T => Boolean): Iterator[T] = {
       var stop = false
@@ -573,9 +576,7 @@ package object euler {
     println("stop")
   }
 
-  implicit class BigIntOps(val bi: BigInt) extends AnyVal {
-
-    import java.math.BigInteger
+  extension (bi: BigInt) {
 
     def getDigitCount: Int = {
       val factor     = Math.log(2) / Math.log(10)
@@ -585,9 +586,9 @@ package object euler {
       digitCount
     }
 
-    def allDigitsReversed = digits.toArray.reverseIterator
+    def allDigitsReversed: Iterator[Int] = digits.toArray.reverseIterator
 
-    def digits = bi.toString().iterator.map(Character.getNumericValue)
+    def digits: Iterator[Int] = bi.toString().iterator.map(Character.getNumericValue)
 
     def sqrtNatural = BigInt(bi.bigInteger.sqrt)
 
@@ -608,9 +609,14 @@ package object euler {
     def toBigDecimal = {
       BigDecimal(java.math.BigDecimal(bi.bigInteger))
     }
+    
+     def toIntSafe = {
+      bi.bigInteger.intValueExact()
+    }
+
   }
 
-  implicit class BigDecimalOps(val bd: BigDecimal) extends AnyVal {
+  extension (bd: BigDecimal) {
 
     def fractionalPart: BigDecimal = {
       val whole = bd.toBigInt
@@ -665,7 +671,7 @@ package object euler {
 
   }
 
-  implicit class BigIntegerOps(val bi: BigInteger) extends AnyVal {
+  extension (bi: BigInteger) {
 
     def isPerfectSquare: Boolean = {
       val root = bi.sqrt
@@ -673,7 +679,7 @@ package object euler {
     }
   }
 
-  implicit class DoubleOps(val d: Double) extends AnyVal {
+  extension (d: Double) {
 
     def isPerfectSquare: Boolean = {
       d != 0 &&
@@ -696,7 +702,7 @@ package object euler {
 
   }
 
-  implicit class OptionOps[T](val o: Option[T]) extends AnyVal {
+  extension[T] (o: Option[T]) {
     def openOrEval(excuse: => String): T = {
       o match {
         case Some(x) => x
@@ -713,10 +719,10 @@ package object euler {
   }
   def isReducedProperFraction(n: Long, d: Long): Boolean = gcdEuclid(n, d) == 1
 
-  def dynamicPrimeCheck(preloadUntil:Long) = {
+  def dynamicPrimeCheck(preloadUntil: Long) = {
     var max   = 0L
     val cache = mutable.HashSet.empty[Long]
-    val func = (n: Long) => {
+    val func  = (n: Long) => {
       if (max < n) {
         cache ++= allPrimesLazy.dropWhile(_ <= max).takeWhile(_ <= n)
         max = n
@@ -741,33 +747,34 @@ package object euler {
     min
   }
 
-
-  def dataReader(name:String) = {
+  def dataReader(name: String) = {
     val file = openOrCreateFile(s"stream_$name")
     lazy val stream = DataInputStream(BufferedInputStream(FileInputStream(file)))
-    new DataReader:
+    new DataReader :
       override def processAndClose[T](cb: DataInputStream => T): T = {
         val ret = cb(stream)
         stream.close()
         ret
       }
   }
-  def dataWriter(name:String, append:Boolean):DataWriter = {
-    val es = Executors.newSingleThreadExecutor()
-    val file = openOrCreateFile(s"stream_$name")
+  def dataWriter(name: String, append: Boolean): DataWriter = {
+    val es     = Executors.newSingleThreadExecutor()
+    val file   = openOrCreateFile(s"stream_$name")
     val stream = DataOutputStream(BufferedOutputStream(FileOutputStream(file, append)))
-    def synced[T](logic : => T) = {
+
+    def synced[T](logic: => T) = {
       es.submit(new Runnable {
         override def run(): Unit = {
           logic
         }
       })
     }
-    val ret = new DataWriter:
+
+    val ret = new DataWriter :
 
       override def doWithStream[T](cb: DataOutputStream => T): Unit =
         synced(cb(stream))
-        
+
       override def flush(): Unit =
         synced(stream.flush())
 
@@ -777,18 +784,17 @@ package object euler {
           es.awaitTermination(Long.MaxValue, TimeUnit.DAYS)
           stream.close()
         }
-    
-    
+
     ret
   }
 
   trait DataWriter {
-    def doWithStream[T](cb:DataOutputStream => T):Unit
-    def flush():Unit
-    def close():Unit
+    def doWithStream[T](cb: DataOutputStream => T): Unit
+    def flush(): Unit
+    def close(): Unit
   }
 
   trait DataReader {
-    def processAndClose[T](cb:(DataInputStream) =>T):T
+    def processAndClose[T](cb: (DataInputStream) => T): T
   }
 }
