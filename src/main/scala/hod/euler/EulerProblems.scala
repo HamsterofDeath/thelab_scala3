@@ -692,7 +692,7 @@ import scala.util.Random
 
 @main def euler655(): Unit = {
 
-  def forEachPalindrome[U](digits: Int, allowZeroEnd:Boolean, cb: String => U): Unit = {
+  def forEachPalindrome[U](digits: Int, allowZeroEnd: Boolean, cb: String => U): Unit = {
     val minRightSide = 1
     val isEven = digits % 2 == 0
     val maxRightSide = {
@@ -713,7 +713,7 @@ import scala.util.Random
   val modBy = 10_000_019
 
   def countForDigits(n: Int) = {
-    val outerPalindromeSize = if ((n / 2) % 2 == 0) n / 2 else n / 2 - 1
+    val outerPalindromeSize = if ((n / 2) % 2 == 0) n / 2 else n / 2 + 1
     val innerPalindromeSize = n - outerPalindromeSize
     val sectionADigits = outerPalindromeSize / 2
     val sectionBDigits = if (innerPalindromeSize % 2 == 0) innerPalindromeSize / 2 else innerPalindromeSize / 2 + 1
@@ -721,7 +721,6 @@ import scala.util.Random
     val sectionDDigits = outerPalindromeSize / 2
     val toBCFactor = 10.powSafe(sectionDDigits)
     val toAFactor = 10.powSafe(sectionDDigits + sectionCDigits + sectionBDigits)
-    println(s"For digits $n ($outerPalindromeSize+$innerPalindromeSize), using section sizes $sectionADigits+$sectionBDigits+$sectionCDigits+$sectionDDigits, BC factor: $toBCFactor, A factor: $toAFactor")
 
     val lookup = Array.fill[Int](modBy)(0)
 
@@ -741,14 +740,14 @@ import scala.util.Random
         BigInt(rightHalf)
       }
       val sectionADMod = ((sectionAMod + sectionDMod) % modBy).toIntSafe
-      val matchCount = lookup((modBy-sectionADMod) % modBy)
+      val matchCount = lookup((modBy - sectionADMod) % modBy)
       totalCount += matchCount
     })
     totalCount
   }
 
-  val solution = ((16 to 32) map { d =>
-    val ret = measured(countForDigits(d))
+  val solution = ((4 to 32) map { d =>
+    val ret = countForDigits(d)
     println(ret)
     ret
   }).sum
