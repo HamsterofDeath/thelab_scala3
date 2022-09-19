@@ -414,8 +414,6 @@ package object euler {
 
     def digitCount: Int = allDigits.size
 
-    def withReversedDigits: Long = allDigitsReversed.foldLeft(0L)((acc, e) => acc * 10 + e)
-
     def pow(n: Int): Long = {
       n match {
         case 0 => 1
