@@ -692,7 +692,7 @@ import scala.util.Random
 
 @main def euler655(): Unit = {
 
-  def forEachPalindrome[U](digits: Int, cb: Long => U): Unit = {
+  def forEachPalindrome[U](digits: Int, allowZeroEnd:Boolean, cb: String => U): Unit = {
     val minRightSide = 1
     val isEven = digits % 2 == 0
     val maxRightSide = {
@@ -701,11 +701,11 @@ import scala.util.Random
     }
     val rightSideDigitCount = maxRightSide.digitCount
     minRightSide to maxRightSide foreach { rightSide =>
-      if (rightSide % 10 != 0) {
+      if (allowZeroEnd || rightSide % 10 != 0) {
         val withLeadingZeroes = rightSide.toString.reverse.padTo(rightSideDigitCount, '0').reverse
         val leftSide = if (isEven) withLeadingZeroes.reverse else withLeadingZeroes.drop(1).reverse
         val palindrome = leftSide + withLeadingZeroes
-        cb(palindrome.toLong)
+        cb(palindrome)
       }
     }
   }
@@ -725,33 +725,35 @@ import scala.util.Random
 
     val lookup = Array.fill[Int](modBy)(0)
 
-    forEachPalindrome(innerPalindromeSize, pd => {
-      val mod = ((pd * toBCFactor) % modBy).toIntSafe
+    forEachPalindrome(innerPalindromeSize, true, pd => {
+      val mod = ((BigInt(pd) * toBCFactor) % modBy).toIntSafe
       lookup(mod) += 1
     })
 
     var totalCount = 0L
-    forEachPalindrome(outerPalindromeSize, pd => {
+    forEachPalindrome(outerPalindromeSize, false, pd => {
       val sectionAMod = {
-        val leftHalf = pd.toString.take(sectionADigits)
+        val leftHalf = pd.take(sectionADigits)
         BigInt(leftHalf) * toAFactor
       }
       val sectionDMod = {
-        val rightHalf = pd.toString.takeRight(sectionDDigits)
+        val rightHalf = pd.takeRight(sectionDDigits)
         BigInt(rightHalf)
       }
       val sectionADMod = ((sectionAMod + sectionDMod) % modBy).toIntSafe
-      val matchCount = lookup(modBy - sectionADMod)
+      val matchCount = lookup((modBy-sectionADMod) % modBy)
       totalCount += matchCount
     })
     totalCount
   }
 
-  println(countForDigits(16))
-  println(countForDigits(17))
-  println(countForDigits(18))
-  println(countForDigits(19))
-  println(countForDigits(20))
+  val solution = ((16 to 32) map { d =>
+    val ret = measured(countForDigits(d))
+    println(ret)
+    ret
+  }).sum
+
+  println(solution)
 }
 
 
