@@ -761,7 +761,7 @@ import scala.util.Random
     totalCount
   }
 
-  val solution = measured((4 to 32).par.map { d =>
+  val solution = measured((4 to 32).reverse.par.map { d =>
     val ret = countForDigits(d)
     println(s"f($d) = $ret")
     ret
