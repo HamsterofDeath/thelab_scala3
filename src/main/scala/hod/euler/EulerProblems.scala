@@ -734,27 +734,27 @@ import scala.util.Random
     }
     val sectionCDigits      = halfInnerSize
     val sectionDDigits      = outerPalindromeSize / 2
-    val toBCFactor          = 10.powSafe(sectionDDigits)
+    val toBCFactor          = 10.powSafe(sectionDDigits).bigInteger.longValueExact()
+    val bcFactorMod = (toBCFactor % modBy).toIntSafe
     val toAFactor           = 10.powSafe(sectionDDigits + sectionCDigits + sectionBDigits)
+    val aFactorMod = toAFactor.mod(modBy).toIntSafe
 
     val lookup = Array.fill[Int](modBy)(0)
 
     forEachPalindrome(innerPalindromeSize, true, pd => {
-      val mod = ((BigInt(pd) * toBCFactor) % modBy).toIntSafe
+      val mod = (((pd.toLong % modBy) * bcFactorMod) % modBy).toIntSafe
       lookup(mod) += 1
     })
 
     var totalCount = 0L
     forEachPalindrome(outerPalindromeSize, false, pd => {
       val sectionAMod  = {
-        val leftHalf = pd.take(sectionADigits)
-        BigInt(leftHalf) * toAFactor
+        (((pd.take(sectionADigits).toLong % modBy) * aFactorMod) % modBy).toIntSafe
       }
       val sectionDMod  = {
-        val rightHalf = pd.takeRight(sectionDDigits)
-        BigInt(rightHalf)
+        pd.takeRight(sectionDDigits).toInt
       }
-      val sectionADMod = ((sectionAMod + sectionDMod) % modBy).toIntSafe
+      val sectionADMod = (sectionAMod + sectionDMod) % modBy
       val matchCount   = lookup((modBy - sectionADMod) % modBy)
       totalCount += matchCount
     })
