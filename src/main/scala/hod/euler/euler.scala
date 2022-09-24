@@ -238,7 +238,7 @@ package object euler {
         var otherSide = List.empty[Long]
         Iterator.single(1L) ++ Iterator
           .from(2)
-          .takeWhilePlusOne(_ <= limit)
+          .takeWhilePlusOne(_ < limit)
           .filter(n % _ == 0)
           .map { e =>
             if (n / e != limit) {

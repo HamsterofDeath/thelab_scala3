@@ -779,7 +779,7 @@ import scala.util.Random
     var minZ  = 1L
     var found = 0
     divisorsOf(n)
-    .foreach { y =>
+      .foreach { y =>
         var cursor = minZ
         var search = true
         while (search) {
@@ -834,7 +834,7 @@ import scala.util.Random
             minZ = minZ max z
             search = false
             found += 1
-            if (found>1) return false
+            if (found > 1) return false
           } else {
             cursor += 1
             search = cursor <= y
@@ -851,6 +851,10 @@ import scala.util.Random
     println()
     println("Count:" + solutions)
   }
+}
+
+@main def test():Unit = {
+ 1 to 1000 foreach {i => println(i+" > "+divisorsOf(i).toList)}
 }
 
 
