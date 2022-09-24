@@ -239,7 +239,9 @@ package object euler {
           .takeWhilePlusOne(_ <= limit)
           .filter(n % _ == 0)
           .map { e =>
-            otherSide = n / e :: otherSide
+            if (n / e!=limit) {
+              otherSide = n / e :: otherSide
+            }
             e.toLong
           } ++ otherSide.iterator
     }

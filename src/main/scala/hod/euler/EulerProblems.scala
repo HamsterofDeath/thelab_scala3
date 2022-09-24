@@ -771,31 +771,45 @@ import scala.util.Random
 }
 
 @main def euler135(): Unit = {
-  val maxN = 1000000
+  val maxN     = 1000000
   val progress = AtomicInteger(0)
-  def countSolutionsForY(n: Int):Int = {
+
+  def countSolutionsForY(n: Int): Int = {
     if (progress.incrementAndGet() % 1000 == 0) print(".")
-    val divisors = divisorsOf(n).toList
-    divisors
-      .count { y =>
-      (1 until y.toIntSafe)
-        .iterator
-        .map { z =>
-          val diff = y - z
-          val x    = y + diff
-          val nTest    = x * x - y * y - z * z
-          nTest
+    var minZ  = 1L
+    var found = 0
+    divisorsOf(n)
+    .foreach { y =>
+        var cursor = minZ
+        var search = true
+        while (search) {
+          val z     = cursor
+          val diff  = y - z
+          val x     = y + diff
+          val nTest = x * x - y * y - z * z
+          val good  = nTest == n
+          if (good) {
+            minZ = minZ max z
+            search = false
+            found += 1
+          } else {
+            cursor += 1
+            search = cursor <= y
+          }
         }
-        .takeWhile(_ > 0)
-        .contains(n)
-    }
+      }
+    found
   }
 
-    measured {
-      val solutions = Random.shuffle((1 to maxN)).par.filter(countSolutionsForY(_)==10)
-      println(solutions)
-      println(solutions.size)
-    }
+  measured {
+    val solutions = Random.shuffle((1 until maxN))
+                          .par
+                          .filter(countSolutionsForY(_) == 10)
+                          .toList
+                          .sorted
+    println()
+    println("Count:" + solutions.size)
+  }
 }
 
 
