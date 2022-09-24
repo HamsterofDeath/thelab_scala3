@@ -735,9 +735,9 @@ import scala.util.Random
     val sectionCDigits      = halfInnerSize
     val sectionDDigits      = outerPalindromeSize / 2
     val toBCFactor          = 10.powSafe(sectionDDigits).bigInteger.longValueExact()
-    val bcFactorMod = (toBCFactor % modBy).toIntSafe
+    val bcFactorMod         = (toBCFactor % modBy).toIntSafe
     val toAFactor           = 10.powSafe(sectionDDigits + sectionCDigits + sectionBDigits)
-    val aFactorMod = toAFactor.mod(modBy).toIntSafe
+    val aFactorMod          = toAFactor.mod(modBy).toIntSafe
 
     val lookup = Array.fill[Int](modBy)(0)
 
@@ -768,6 +768,34 @@ import scala.util.Random
   }.sum)
 
   println(solution)
+}
+
+@main def euler135(): Unit = {
+  val maxN = 1000000
+  val progress = AtomicInteger(0)
+  def countSolutionsForY(n: Int):Int = {
+    if (progress.incrementAndGet() % 1000 == 0) print(".")
+    val divisors = divisorsOf(n).toList
+    divisors
+      .count { y =>
+      (1 until y.toIntSafe)
+        .iterator
+        .map { z =>
+          val diff = y - z
+          val x    = y + diff
+          val nTest    = x * x - y * y - z * z
+          nTest
+        }
+        .takeWhile(_ > 0)
+        .contains(n)
+    }
+  }
+
+    measured {
+      val solutions = Random.shuffle((1 to maxN)).par.filter(countSolutionsForY(_)==10)
+      println(solutions)
+      println(solutions.size)
+    }
 }
 
 
