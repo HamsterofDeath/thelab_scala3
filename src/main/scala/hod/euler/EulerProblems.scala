@@ -812,5 +812,46 @@ import scala.util.Random
   }
 }
 
+@main def euler136(): Unit = {
+  val maxN     = 50000000
+  val progress = AtomicInteger(0)
+
+  def exactlyOneSolution(n: Int): Boolean = {
+    if (progress.incrementAndGet() % 1000 == 0) print(".")
+    var minZ  = 1L
+    var found = 0
+    divisorsOf(n)
+      .foreach { y =>
+        var cursor = minZ
+        var search = true
+        while (search) {
+          val z     = cursor
+          val diff  = y - z
+          val x     = y + diff
+          val nTest = x * x - y * y - z * z
+          val good  = nTest == n
+          if (good) {
+            minZ = minZ max z
+            search = false
+            found += 1
+            if (found>1) return false
+          } else {
+            cursor += 1
+            search = cursor <= y
+          }
+        }
+      }
+    found == 1
+  }
+
+  measured {
+    val solutions = Random.shuffle((1 until maxN))
+                          .par
+                          .count(exactlyOneSolution)
+    println()
+    println("Count:" + solutions)
+  }
+}
+
 
 

@@ -1,7 +1,9 @@
 package hod
 
-import java.io.{BufferedInputStream, BufferedOutputStream, BufferedReader, DataInputStream, 
-  DataOutputStream, EOFException, File, FileInputStream, FileOutputStream, FileReader}
+import java.io.{
+  BufferedInputStream, BufferedOutputStream, BufferedReader, DataInputStream,
+  DataOutputStream, EOFException, File, FileInputStream, FileOutputStream, FileReader
+}
 import java.math.{BigInteger, MathContext, RoundingMode}
 import java.text.{DecimalFormat, DecimalFormatSymbols}
 import java.util.concurrent.{Executors, TimeUnit}
@@ -239,7 +241,7 @@ package object euler {
           .takeWhilePlusOne(_ <= limit)
           .filter(n % _ == 0)
           .map { e =>
-            if (n / e!=limit) {
+            if (n / e != limit) {
               otherSide = n / e :: otherSide
             }
             e.toLong
@@ -263,6 +265,7 @@ package object euler {
       }
 
   }
+
   def primeFactorsOf(n: BigInt): Iterator[Long] = {
     var remaining = n
     allPrimesLazy
@@ -436,7 +439,7 @@ package object euler {
         case _ => BigInt(l).pow(n)
       }
     }
-    
+
     def allDigitsReversed: Iterator[Int] = {
       var number = l
       Iterator
@@ -609,8 +612,8 @@ package object euler {
     def toBigDecimal = {
       BigDecimal(java.math.BigDecimal(bi.bigInteger))
     }
-    
-     def toIntSafe = {
+
+    def toIntSafe = {
       bi.bigInteger.intValueExact()
     }
 
@@ -717,6 +720,7 @@ package object euler {
       }
     }
   }
+
   def isReducedProperFraction(n: Long, d: Long): Boolean = gcdEuclid(n, d) == 1
 
   def dynamicPrimeCheck(preloadUntil: Long) = {
@@ -757,6 +761,7 @@ package object euler {
         ret
       }
   }
+
   def dataWriter(name: String, append: Boolean): DataWriter = {
     val es     = Executors.newSingleThreadExecutor()
     val file   = openOrCreateFile(s"stream_$name")
