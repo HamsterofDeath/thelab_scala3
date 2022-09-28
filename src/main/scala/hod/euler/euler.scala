@@ -823,7 +823,7 @@ package object euler {
           new ObjectInputStream(dis).readObject().asInstanceOf[T]
         } catch {
           case e: Throwable =>
-            println(e.getMessage)
+            e.printStackTrace()
             default
         }
       }
