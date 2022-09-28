@@ -1,9 +1,6 @@
 package hod
 
-import java.io.{
-  BufferedInputStream, BufferedOutputStream, BufferedReader, DataInputStream,
-  DataOutputStream, EOFException, File, FileInputStream, FileOutputStream, FileReader
-}
+import java.io.{BufferedInputStream, BufferedOutputStream, BufferedReader, DataInputStream, DataOutputStream, EOFException, File, FileInputStream, FileOutputStream, FileReader, ObjectInputStream, ObjectOutputStream}
 import java.math.{BigInteger, MathContext, RoundingMode}
 import java.text.{DecimalFormat, DecimalFormatSymbols}
 import java.util.concurrent.{Executors, TimeUnit}
@@ -797,9 +794,29 @@ package object euler {
     def doWithStream[T](cb: DataOutputStream => T): Unit
     def flush(): Unit
     def close(): Unit
+    
+    def writeObject[T](t:T) = {
+      doWithStream{ dos =>
+        val stream = new ObjectOutputStream(dos)
+        stream.writeObject(t)
+        close()
+      }
+    }
   }
 
   trait DataReader {
     def processAndClose[T](cb: (DataInputStream) => T): T
+
+    def readObject[T](default: => T) = {
+      processAndClose[T] { dis =>
+        try {
+          new ObjectInputStream(dis).readObject().asInstanceOf[T]
+        } catch {
+          case e =>
+            println(e.getLocalizedMessage)
+            default
+        }
+      }
+    }
   }
 }

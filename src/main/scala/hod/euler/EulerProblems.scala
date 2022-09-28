@@ -817,7 +817,7 @@ import scala.util.Random
   val progress = AtomicInteger(0)
 
   def exactlyOneSolution(n: Int): Boolean = {
-    if (progress.incrementAndGet() % 1000 == 0) print(".")
+    if (progress.incrementAndGet() % 50000 == 0) print(".")
     var minZ  = 1L
     var found = 0
     divisorsOf(n)
@@ -844,18 +844,28 @@ import scala.util.Random
     found == 1
   }
 
-  measured {
-    val solutions = Random.shuffle((1 until maxN))
-                          .par
-                          .count(exactlyOneSolution)
-    println()
-    println("Count:" + solutions)
+  def forNthMillion(n: Int): Long = {
+    val known = dataReader("euler136").readObject[Map[Int, Long]](Map.empty)
+    known.get(n) match
+      case Some(value) => value
+      case None =>
+        val saveMe = known + (n -> measured {
+          val solutions: Long = {
+            Random.shuffle(((n - 1) * 1000000 until n * 1000000))
+                  .par
+                  .count(exactlyOneSolution)
+          }
+          println()
+          println(s"Count for $n:" + solutions)
+          solutions
+        })
+        dataWriter("euler136", false).writeObject(saveMe)
+        saveMe(n)
   }
-}
 
-@main def test():Unit = {
- 1 to 1000 foreach {i => println(i+" > "+divisorsOf(i).toList)}
-}
+  val total = ((1 to (maxN / 1000000)).map(forNthMillion).sum)
+  println(s"Final solution: $total")
 
+}
 
 
