@@ -845,11 +845,14 @@ import scala.util.Random
   }
 
   def forNthMillion(n: Int): Long = {
-    val known = dataReader("euler136").readObject[Map[Int, Long]](Map.empty)
+    val filename = "euler136"
+    val known = dataReader(filename).readObject[Map[Int, Long]](Map.empty)
     known.get(n) match
-      case Some(value) => value
+      case Some(value) =>
+        println(s"known value for $n is $value")
+        value
       case None =>
-        val saveMe = known + (n -> measured {
+        val saveMe = known + (n -> bench(s"Counting for $n") {
           val solutions: Long = {
             Random.shuffle(((n - 1) * 1000000 until n * 1000000))
                   .par
@@ -859,7 +862,8 @@ import scala.util.Random
           println(s"Count for $n:" + solutions)
           solutions
         })
-        dataWriter("euler136", false).writeObject(saveMe)
+        dataWriter(filename, false).writeObject(saveMe)
+        println(s"saved $saveMe")
         saveMe(n)
   }
 

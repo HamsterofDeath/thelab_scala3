@@ -40,8 +40,8 @@ package object euler {
                    terms: Int,
                    precision: Int
                  ) = {
-    val mc   = MathContext(precision, RoundingMode.HALF_UP)
-    val one  = BigDecimal(1, mc)
+    val mc = MathContext(precision, RoundingMode.HALF_UP)
+    val one = BigDecimal(1, mc)
     val zero = BigDecimal(0, mc)
 
     def deepDive(remaining: Int): BigDecimal = {
@@ -100,6 +100,7 @@ package object euler {
     }
 
     def foreach[U](f: T => U): Unit
+
     def map[N](f: T => N): Foreach[N] =
       new Foreach[N] {
         override def foreach[U](nf: N => U): Unit = {
@@ -111,8 +112,11 @@ package object euler {
   def noop(): Unit = {}
 
   sealed trait ComparisonResult
+
   case object TargetIsSmaller extends ComparisonResult
+
   case object TargetIsEqual extends ComparisonResult
+
   case object TargetIsBigger extends ComparisonResult
 
   def measured[T](t: => T) = {
@@ -122,16 +126,19 @@ package object euler {
   def bench[T](name: String)(t: => T) = {
     println(s"Operation '$name' start")
     val start = System.nanoTime()
-    val ret   = t
-    val end   = System.nanoTime()
+    val ret = t
+    val end = System.nanoTime()
     println(s"Operation took ${(end.toDouble - start) / 1000000000L} sec")
     ret
   }
 
   abstract class SearchSpace[T] {
     def nextHigherBound(t: T): T
+
     def nextLowerBound(t: T): T
+
     def determineMiddle(a: T, b: T): T
+
     def compareTargetAgainst(reference: T): ComparisonResult
 
   }
@@ -179,10 +186,10 @@ package object euler {
     def nextCloserElement() = {
       val middle: T = searchSpace.determineMiddle(min, max)
 
-      val cmpMin    = searchSpace.compareTargetAgainst(min)
+      val cmpMin = searchSpace.compareTargetAgainst(min)
       val cmpMiddle = searchSpace.compareTargetAgainst(middle)
-      val cmpMax    = searchSpace.compareTargetAgainst(max)
-      val nextTry   = {
+      val cmpMax = searchSpace.compareTargetAgainst(max)
+      val nextTry = {
         (cmpMin, cmpMiddle, cmpMax) match {
           case (TargetIsBigger, TargetIsSmaller, _) =>
             max = middle
@@ -211,7 +218,7 @@ package object euler {
   def countDivisorsOf(n: Long) = {
     var count = 0
     val limit = n / 2
-    var test  = 1
+    var test = 1
 
     while (test <= limit) {
       if (n % test == 0) {
@@ -231,7 +238,7 @@ package object euler {
       case 0 | 1 => Iterator.empty
       case 2 => Iterator.single(1L)
       case _ =>
-        val limit     = math.sqrt(n).toLong
+        val limit = math.sqrt(n).toLong
         var otherSide = List.empty[Long]
         Iterator.single(1L) ++ Iterator
           .from(2)
@@ -286,7 +293,7 @@ package object euler {
 
   implicit class FileOps(f: File) {
     def slurp = {
-      val in  = FileReader(f)
+      val in = FileReader(f)
       val bin = BufferedReader(in, 4096)
       Iterator.continually(bin.readLine()).takeWhile { e =>
         val stop = e == null
@@ -315,7 +322,7 @@ package object euler {
     var maxPrimeRead = 0L
 
     val fromFile: Iterator[Long] = {
-      val in  = DataInputStream(
+      val in = DataInputStream(
         BufferedInputStream(FileInputStream(cacheFile), 1024 * 1024)
       )
       var row = 0
@@ -421,7 +428,7 @@ package object euler {
         case 0 => 1
         case _ =>
           var ret = l
-          var i   = 1
+          var i = 1
           while (i < n) {
             ret *= l
             i += 1
@@ -471,9 +478,9 @@ package object euler {
             var sqrt = 0L
             if (n < 410881L) { //John Carmack hack, converted to Java.
               // See: http://www.codemaestro.com/reviews/9
-              var i  = 0
+              var i = 0
               var x2 = .0f
-              var y  = .0f
+              var y = .0f
               x2 = n * 0.5f
               y = n
               i = java.lang.Float.floatToRawIntBits(y)
@@ -493,7 +500,7 @@ package object euler {
 
     def isPerfectSquareSlow: Boolean = {
       l != 0 && {
-        val ref  = java.math.BigInteger.valueOf(l)
+        val ref = java.math.BigInteger.valueOf(l)
         val sqrt = ref.sqrt
         sqrt.pow(2) == ref
       }
@@ -503,8 +510,8 @@ package object euler {
       if (l % 2 == 0) return l == 2
       if (l % 3 == 0) return l == 3
       val sqrtN = Math.sqrt(l)
-      var j     = 5
-      var step  = 4
+      var j = 5
+      var step = 4
       while (j <= sqrtN) {
         if (l % j == 0) return false
         step = 6 - step
@@ -519,8 +526,8 @@ package object euler {
       if (i % 2 == 0) return i == 2
       if (i % 3 == 0) return i == 3
       val sqrtn = Math.sqrt(i)
-      var j     = 5
-      var step  = 4
+      var j = 5
+      var step = 4
       while (j <= sqrtn) {
         if (i % j == 0) return false
         step = 6 - step
@@ -539,7 +546,7 @@ package object euler {
   extension[T] (it: Iterator[T]) {
 
     def memoizedByIndex: Int => T = {
-      val cache        = mutable.HashMap.empty[Int, T]
+      val cache = mutable.HashMap.empty[Int, T]
       var maxEvaluated = -1
       (i: Int) => {
         assert(i >= 0, "int overflow")
@@ -579,7 +586,7 @@ package object euler {
   extension (bi: BigInt) {
 
     def getDigitCount: Int = {
-      val factor     = Math.log(2) / Math.log(10)
+      val factor = Math.log(2) / Math.log(10)
       val digitCount = (factor * bi.bitLength + 1).toInt
       if (BigInteger.TEN.pow(digitCount - 1).compareTo(bi) > 0)
         return digitCount - 1
@@ -631,7 +638,7 @@ package object euler {
       Iterator.continually {
         val nextValue = nextWhole
         remaining = {
-          val num   = BigDecimal(1, bd.mc)
+          val num = BigDecimal(1, bd.mc)
           val denom = remaining - BigDecimal(nextValue, bd.mc)
           num / denom
         }
@@ -640,9 +647,9 @@ package object euler {
     }
 
     def convergentFractions: Iterator[(BigInt, BigInt)] = {
-      val fractions      = continuedFractions.memoizedByIndex
+      val fractions = continuedFractions.memoizedByIndex
       val forDenominator = (i: Int) => fractions(i + 1)
-      val cache          = mutable.HashMap.empty[(Int, Boolean), BigInt]
+      val cache = mutable.HashMap.empty[(Int, Boolean), BigInt]
 
       def eval(n: Int, isNumerator: Boolean): BigInt = {
         cache.getOrElseUpdate(
@@ -663,7 +670,7 @@ package object euler {
       }
 
       Iterator.from(1).map { n =>
-        val num   = eval(n + 1, isNumerator = true)
+        val num = eval(n + 1, isNumerator = true)
         val denom = eval(n, isNumerator = false)
         (num, denom)
       }
@@ -683,21 +690,21 @@ package object euler {
 
     def isPerfectSquare: Boolean = {
       d != 0 &&
-      math.sqrt(d).isNatural
+        math.sqrt(d).isNatural
     }
 
     def sqrt: Double = math.sqrt(d)
 
     def sqrtPrecise(scale: Int): BigDecimal = {
       java.math.BigDecimal
-          .valueOf(d)
-          .sqrt(java.math.MathContext(scale, java.math.RoundingMode.HALF_UP))
+        .valueOf(d)
+        .sqrt(java.math.MathContext(scale, java.math.RoundingMode.HALF_UP))
     }
 
     def isNatural: Boolean = {
       d.floor == d &&
-      !d.isNaN &&
-      !d.isInfinity
+        !d.isNaN &&
+        !d.isInfinity
     }
 
   }
@@ -721,9 +728,9 @@ package object euler {
   def isReducedProperFraction(n: Long, d: Long): Boolean = gcdEuclid(n, d) == 1
 
   def dynamicPrimeCheck(preloadUntil: Long) = {
-    var max   = 0L
+    var max = 0L
     val cache = mutable.HashSet.empty[Long]
-    val func  = (n: Long) => {
+    val func = (n: Long) => {
       if (max < n) {
         cache ++= allPrimesLazy.dropWhile(_ <= max).takeWhile(_ <= n)
         max = n
@@ -735,8 +742,8 @@ package object euler {
   }
 
   def gcdEuclid(a: Long, b: Long) = {
-    var max       = Math.max(a, b)
-    var min       = Math.min(a, b)
+    var max = Math.max(a, b)
+    var min = Math.min(a, b)
     var remainder = max % min
     while ( {
       remainder != 0
@@ -760,8 +767,8 @@ package object euler {
   }
 
   def dataWriter(name: String, append: Boolean): DataWriter = {
-    val es     = Executors.newSingleThreadExecutor()
-    val file   = openOrCreateFile(s"stream_$name")
+    val es = Executors.newSingleThreadExecutor()
+    val file = openOrCreateFile(s"stream_$name")
     val stream = DataOutputStream(BufferedOutputStream(FileOutputStream(file, append)))
 
     def synced[T](logic: => T) = {
@@ -782,23 +789,26 @@ package object euler {
 
       override def close(): Unit =
         synced {
-          es.shutdown()
-          es.awaitTermination(Long.MaxValue, TimeUnit.DAYS)
           stream.close()
         }
+        es.shutdown()
+        es.awaitTermination(Long.MaxValue, TimeUnit.DAYS)
 
     ret
   }
 
   trait DataWriter {
     def doWithStream[T](cb: DataOutputStream => T): Unit
+
     def flush(): Unit
+
     def close(): Unit
-    
-    def writeObject[T](t:T) = {
-      doWithStream{ dos =>
+
+    def writeObject[T](t: T) = {
+      doWithStream { dos =>
         val stream = new ObjectOutputStream(dos)
         stream.writeObject(t)
+        stream.close()
         close()
       }
     }
@@ -812,8 +822,8 @@ package object euler {
         try {
           new ObjectInputStream(dis).readObject().asInstanceOf[T]
         } catch {
-          case e =>
-            println(e.getLocalizedMessage)
+          case e: Throwable =>
+            println(e.getMessage)
             default
         }
       }
