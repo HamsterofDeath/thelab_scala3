@@ -830,3 +830,4 @@ package object euler {
     }
   }
 }
+

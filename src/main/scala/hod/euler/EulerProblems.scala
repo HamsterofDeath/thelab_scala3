@@ -847,14 +847,17 @@ import scala.util.Random
   def forNthMillion(n: Int): Long = {
     val filename = s"euler136_$n"
 
+    val min = ((n - 1) * 1000000) max 1
+    val maxEx = n * 1000000
+
     dataReader(filename).readObject[Option[Long]](Option.empty) match
       case Some(value) =>
-        println(s"known value for $n is $value")
+        println(s"known value for $n is $value ($min until ${maxEx-1})")
         value
       case None =>
         val saveMe = bench(s"Counting for $n") {
           val solutions: Long = {
-            Random.shuffle(((n - 1) * 1000000 until n * 1000000))
+            Random.shuffle((min until maxEx))
                   .par
                   .count(exactlyOneSolution)
           }
@@ -867,9 +870,11 @@ import scala.util.Random
         saveMe
   }
 
-  val total = ((30 to (maxN / 1000000)).map(forNthMillion).sum)
+  val total = ((1 to (maxN / 1000000)).map(forNthMillion).sum)
   println(s"Final solution: $total")
 
 }
+
+
 
 
