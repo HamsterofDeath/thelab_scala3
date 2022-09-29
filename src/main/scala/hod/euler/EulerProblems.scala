@@ -867,7 +867,7 @@ import scala.util.Random
         saveMe
   }
 
-  val total = ((1 to (maxN / 1000000)).map(forNthMillion).sum)
+  val total = ((30 to (maxN / 1000000)).map(forNthMillion).sum)
   println(s"Final solution: $total")
 
 }
