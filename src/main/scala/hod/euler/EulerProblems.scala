@@ -847,12 +847,12 @@ import scala.util.Random
   def forNthMillion(n: Int): Long = {
     val filename = s"euler136_$n"
 
-    val min = ((n - 1) * 1000000) max 1
+    val min   = ((n - 1) * 1000000) max 1
     val maxEx = n * 1000000
 
     dataReader(filename).readObject[Option[Long]](Option.empty) match
       case Some(value) =>
-        println(s"known value for $n is $value ($min until ${maxEx-1})")
+        println(s"known value for $n is $value ($min until ${maxEx - 1})")
         value
       case None =>
         val saveMe = bench(s"Counting for $n") {
@@ -875,6 +875,57 @@ import scala.util.Random
 
 }
 
+@main def euler139(): Unit = {
+  def pythagoreanTripletsTest[U](limit: Int)
+                            (cb: (Int, Int, Int) => U): Unit = {
+    for {a <- 1 to limit
+         b <- 1 to limit
+         c <- 1 to limit if a*a+b*b==c*c && a<=b && b < c
+         } {cb(a,b,c)}
+  }
 
+  def pythagoreanTriplets[U](limit: Int)
+                            (cb: (Int, Int, Int) => U): Unit = {
+    var m = 2
+    var c = 0
+    while ( {c < limit}) {
+      var n = 1
+      while (n < m) {
+        c = m * m + n * n
+        if (c <= limit) {
+          val a = m * m - n * n
+          val b = 2 * m * n
+          cb(a min b, b max a, c)
+        } else {
+          n = m
+        }
+        n += 1
+      }
+      m += 1
+    }
+  }
+
+  val maxPerimeter = 100 * 1000000
+  val maxC = maxPerimeter
+  val known = mutable.HashSet.empty[(Int,Int,Int)]
+  pythagoreanTriplets(maxC) { (a, b, c) =>
+    Iterator.from(1)
+            .takeWhile(_ * (a+b+c) < maxPerimeter)
+            .foreach { factor =>
+              val fa = a*factor
+              val fb = b*factor
+              val fc = c*factor
+              val tileSize = fb - fa
+              val tileable = fc % tileSize == 0
+              val small    = fa + fb + fc < maxPerimeter
+              val nju = !known((fa,fb,fc))
+              if (tileable && small && nju) {
+                known += ((fa,fb,fc))
+              }
+            }
+  }
+  println(known.size)
+
+}
 
 
