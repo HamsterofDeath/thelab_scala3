@@ -876,14 +876,6 @@ import scala.util.Random
 }
 
 @main def euler139(): Unit = {
-  def pythagoreanTripletsTest[U](limit: Int)
-                            (cb: (Int, Int, Int) => U): Unit = {
-    for {a <- 1 to limit
-         b <- 1 to limit
-         c <- 1 to limit if a*a+b*b==c*c && a<=b && b < c
-         } {cb(a,b,c)}
-  }
-
   def pythagoreanTriplets[U](limit: Int)
                             (cb: (Int, Int, Int) => U): Unit = {
     var m = 2
@@ -906,26 +898,92 @@ import scala.util.Random
   }
 
   val maxPerimeter = 100 * 1000000
-  val maxC = maxPerimeter
-  val known = mutable.HashSet.empty[(Int,Int,Int)]
+  val maxC         = maxPerimeter
+  val known        = mutable.HashSet.empty[(Int, Int, Int)]
   pythagoreanTriplets(maxC) { (a, b, c) =>
     Iterator.from(1)
-            .takeWhile(_ * (a+b+c) < maxPerimeter)
+            .takeWhile(_ * (a + b + c) < maxPerimeter)
             .foreach { factor =>
-              val fa = a*factor
-              val fb = b*factor
-              val fc = c*factor
+              val fa       = a * factor
+              val fb       = b * factor
+              val fc       = c * factor
               val tileSize = fb - fa
               val tileable = fc % tileSize == 0
               val small    = fa + fb + fc < maxPerimeter
-              val nju = !known((fa,fb,fc))
+              val nju      = !known((fa, fb, fc))
               if (tileable && small && nju) {
-                known += ((fa,fb,fc))
+                known += ((fa, fb, fc))
               }
             }
   }
   println(known.size)
 
+}
+
+@main def euler196(): Unit = {
+  def sumUntil(n: Int) = {
+    val l = n.toLong
+    if (l % 2 == 0)
+      (l + 1) * (l / 2)
+    else
+      (l + 1) * ((l - 1) / 2) + l / 2 + 1
+  }
+
+  def valueAt(row: Int, col: Int) = {
+    1 + sumUntil(row) + col
+  }
+
+  0 to 8 foreach { row =>
+    0 to row foreach { col =>
+      print(s"${valueAt(row, col)},")
+    }
+    println()
+  }
+
+  val rowsToTest = List(8, 9, 10000)
+
+  val cache      = mutable.HashMap.empty[Long, Boolean]
+
+  def isAPrime(l: Long) = {
+    cache.getOrElseUpdate(l, l.isPrime)
+  }
+  val triplets = mutable.HashMap.empty[(Int, Int), Boolean]
+
+  rowsToTest.foreach { offByOneRow =>
+    val partOfTriplets = mutable.HashSet.empty[Long]
+    val row = offByOneRow-1
+    (0 to row).iterator.foreach { col =>
+      def safePrimeValueAt(r: Int, c: Int) = {
+        if (c <= r && c >= 0) {
+          val check = valueAt(r, c)
+          if (isAPrime(check)) check else 0L
+        } else {
+          0
+        }
+      }
+
+      def isPartOfTriplet(c: Int, r: Int) = {
+        triplets.getOrElseUpdate((c, r), {
+          val ownValue = safePrimeValueAt(c, r)
+          if (ownValue > 0) {
+            //consider(primeValueAt(row - 1, col - 1), false)
+            //          consider(primeValueAt(row + 0, col - 1), true)
+            //          consider(primeValueAt(row + 1, col - 1), false)
+            //          consider(primeValueAt(row - 1, col + 0), false)
+            //          consider(primeValueAt(row + 1, col + 0), false)
+            //          consider(primeValueAt(row - 1, col + 1), false)
+            //          consider(primeValueAt(row + 0, col + 1), true)
+            //          consider(primeValueAt(row + 1, col + 1), false)
+          } else {
+            false
+          }
+        })
+      }
+    }
+
+
+    println(s"sum for row $row is ${partOfTriplets.sum} (${partOfTriplets.toList.sorted})")
+  }
 }
 
 
