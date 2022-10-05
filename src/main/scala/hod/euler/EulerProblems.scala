@@ -4,12 +4,14 @@ package euler
 import java.io.{EOFException, File}
 import java.net.URI
 import java.nio.file.{Files, Path}
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
 import java.util.stream.Collectors
 import scala.annotation.tailrec
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.parallel.CollectionConverters.{ArrayIsParallelizable, seqIsParallelizable}
 import scala.collection.{Searching, mutable}
+import scala.jdk.CollectionConverters.ConcurrentMapHasAsScala
 import scala.util.Random
 
 @main def euler55(): Unit = {
@@ -934,56 +936,89 @@ import scala.util.Random
   }
 
   0 to 8 foreach { row =>
+    print(s"$row:")
     0 to row foreach { col =>
       print(s"${valueAt(row, col)},")
     }
     println()
   }
 
-  val rowsToTest = List(8, 9, 10000)
+  val rowsToTest = List(5678027, 7208785)
 
-  val cache      = mutable.HashMap.empty[Long, Boolean]
+  val cache = ConcurrentHashMap[Long, Boolean].asScala
 
   def isAPrime(l: Long) = {
-    cache.getOrElseUpdate(l, l.isPrime)
+    cache.getOrElseUpdate(l, BigInt(l).isProbablePrime(10))
   }
-  val triplets = mutable.HashMap.empty[(Int, Int), Boolean]
+
+  val allKnownTripletMembers = mutable.HashSet.empty[Long]
 
   rowsToTest.foreach { offByOneRow =>
-    val partOfTriplets = mutable.HashSet.empty[Long]
-    val row = offByOneRow-1
-    (0 to row).iterator.foreach { col =>
-      def safePrimeValueAt(r: Int, c: Int) = {
-        if (c <= r && c >= 0) {
-          val check = valueAt(r, c)
-          if (isAPrime(check)) check else 0L
-        } else {
-          0
-        }
-      }
-
-      def isPartOfTriplet(c: Int, r: Int) = {
-        triplets.getOrElseUpdate((c, r), {
-          val ownValue = safePrimeValueAt(c, r)
-          if (ownValue > 0) {
-            //consider(primeValueAt(row - 1, col - 1), false)
-            //          consider(primeValueAt(row + 0, col - 1), true)
-            //          consider(primeValueAt(row + 1, col - 1), false)
-            //          consider(primeValueAt(row - 1, col + 0), false)
-            //          consider(primeValueAt(row + 1, col + 0), false)
-            //          consider(primeValueAt(row - 1, col + 1), false)
-            //          consider(primeValueAt(row + 0, col + 1), true)
-            //          consider(primeValueAt(row + 1, col + 1), false)
+    println()
+    bench(s"prep $offByOneRow") {
+      val rowToSumUp              = offByOneRow - 1
+      val rowsThatNeedPreparation = List(rowToSumUp - 1, rowToSumUp, rowToSumUp + 1)
+      val partOfTriplets          = ConcurrentHashMap[Long, Boolean].asScala
+      rowsThatNeedPreparation.foreach { rowToPrepare =>
+        def safePrimeValueAt(r: Int, c: Int) = {
+          if (c < r && c >= 0) {
+            val check = valueAt(r, c)
+            if (isAPrime(check)) check else 0L
           } else {
-            false
+            0
           }
-        })
+        }
+
+        (0 to rowToPrepare)
+              .par
+              .foreach { colToPrepare =>
+                if (colToPrepare % 1000000 == 0) print('.')
+                val triplet    = mutable.HashSet.empty[Long]
+                var primeCount = 0
+
+                def isPartOfTriplet(r: Int, c: Int) = {
+                  def consider(value: Long) = {
+                    if (value > 0) {
+                      primeCount += 1
+                      triplet += value
+                    }
+                  }
+
+                  val check = safePrimeValueAt(r + 0, c + 0) > 0
+                  if (check) {
+                    consider(safePrimeValueAt(r - 1, c - 1))
+                    consider(safePrimeValueAt(r + 0, c - 1))
+                    consider(safePrimeValueAt(r + 1, c - 1))
+                    consider(safePrimeValueAt(r - 1, c + 0))
+                    consider(safePrimeValueAt(r + 0, c + 0))
+                    consider(safePrimeValueAt(r + 1, c + 0))
+                    consider(safePrimeValueAt(r - 1, c + 1))
+                    consider(safePrimeValueAt(r + 0, c + 1))
+                    consider(safePrimeValueAt(r + 1, c + 1))
+                  }
+                  primeCount >= 3
+                }
+
+                if (isPartOfTriplet(rowToPrepare, colToPrepare)) {
+                  triplet.foreach { value =>
+                    partOfTriplets.put(value, true)
+                  }
+                  partOfTriplets.put(valueAt(rowToPrepare, colToPrepare), true)
+                }
+              }
+        allKnownTripletMembers ++= partOfTriplets.keys
       }
     }
-
-
-    println(s"sum for row $row is ${partOfTriplets.sum} (${partOfTriplets.toList.sorted})")
   }
+
+  val solution = rowsToTest.map { rowOffByOne =>
+    val row      = rowOffByOne - 1
+    val relevant = (0 to row).iterator.map { col =>
+      valueAt(row, col)
+    }.filter(allKnownTripletMembers)
+    (rowOffByOne, relevant.sum)
+  }
+  println(solution.map(_._2).sum)
 }
 
 
