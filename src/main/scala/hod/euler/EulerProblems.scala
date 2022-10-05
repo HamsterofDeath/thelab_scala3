@@ -935,14 +935,6 @@ import scala.util.Random
     1 + sumUntil(row) + col
   }
 
-  0 to 8 foreach { row =>
-    print(s"$row:")
-    0 to row foreach { col =>
-      print(s"${valueAt(row, col)},")
-    }
-    println()
-  }
-
   val rowsToTest = List(5678027, 7208785)
 
   val cache = ConcurrentHashMap[Long, Boolean].asScala
