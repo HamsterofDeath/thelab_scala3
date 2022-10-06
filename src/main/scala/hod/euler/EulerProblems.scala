@@ -1023,13 +1023,14 @@ import scala.util.Random
   (1 until limit)
     .par
     .foreach { e =>
-      if (progress.incrementAndGet() % 100000 == 0) {
-        println(s"did ${progress.incrementAndGet()}")
+      val counter = progress.incrementAndGet()
+      if (counter % 1000000 == 0) {
+        println(s"did $counter")
       }
       val fs = f(e)
       if (fs.isPerfectSquare) {
         println(s"$e > ${math.sqrt(fs)} (${divisorsOf(e).mkString(",")})")
-        solution.getAndAdd(fs)
+        solution.getAndAdd(e)
       }
     }
 
