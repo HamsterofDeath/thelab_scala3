@@ -970,42 +970,42 @@ import scala.util.Random
         }
 
         (0 to rowToPrepare)
-              .par
-              .foreach { colToPrepare =>
-                if (colToPrepare % 1000000 == 0) print('.')
-                val triplet    = mutable.HashSet.empty[Long]
-                var primeCount = 0
+          .par
+          .foreach { colToPrepare =>
+            if (colToPrepare % 1000000 == 0) print('.')
+            val triplet    = mutable.HashSet.empty[Long]
+            var primeCount = 0
 
-                def isPartOfTriplet(r: Int, c: Int) = {
-                  def consider(value: Long) = {
-                    if (value > 0) {
-                      primeCount += 1
-                      triplet += value
-                    }
-                  }
-
-                  val check = safePrimeValueAt(r + 0, c + 0) > 0
-                  if (check) {
-                    consider(safePrimeValueAt(r - 1, c - 1))
-                    consider(safePrimeValueAt(r + 0, c - 1))
-                    consider(safePrimeValueAt(r + 1, c - 1))
-                    consider(safePrimeValueAt(r - 1, c + 0))
-                    consider(safePrimeValueAt(r + 0, c + 0))
-                    consider(safePrimeValueAt(r + 1, c + 0))
-                    consider(safePrimeValueAt(r - 1, c + 1))
-                    consider(safePrimeValueAt(r + 0, c + 1))
-                    consider(safePrimeValueAt(r + 1, c + 1))
-                  }
-                  primeCount >= 3
-                }
-
-                if (isPartOfTriplet(rowToPrepare, colToPrepare)) {
-                  triplet.foreach { value =>
-                    partOfTriplets.put(value, true)
-                  }
-                  partOfTriplets.put(valueAt(rowToPrepare, colToPrepare), true)
+            def isPartOfTriplet(r: Int, c: Int) = {
+              def consider(value: Long) = {
+                if (value > 0) {
+                  primeCount += 1
+                  triplet += value
                 }
               }
+
+              val check = safePrimeValueAt(r + 0, c + 0) > 0
+              if (check) {
+                consider(safePrimeValueAt(r - 1, c - 1))
+                consider(safePrimeValueAt(r + 0, c - 1))
+                consider(safePrimeValueAt(r + 1, c - 1))
+                consider(safePrimeValueAt(r - 1, c + 0))
+                consider(safePrimeValueAt(r + 0, c + 0))
+                consider(safePrimeValueAt(r + 1, c + 0))
+                consider(safePrimeValueAt(r - 1, c + 1))
+                consider(safePrimeValueAt(r + 0, c + 1))
+                consider(safePrimeValueAt(r + 1, c + 1))
+              }
+              primeCount >= 3
+            }
+
+            if (isPartOfTriplet(rowToPrepare, colToPrepare)) {
+              triplet.foreach { value =>
+                partOfTriplets.put(value, true)
+              }
+              partOfTriplets.put(valueAt(rowToPrepare, colToPrepare), true)
+            }
+          }
         allKnownTripletMembers ++= partOfTriplets.keys
       }
     }
@@ -1019,6 +1019,29 @@ import scala.util.Random
     (rowOffByOne, relevant.sum)
   }
   println(solution.map(_._2).sum)
+}
+
+@main def euler211(): Unit = {
+  val limit = 64_000_000
+
+  def f(n: Int) = divisorsOf(n).map(e => e * e).sum
+
+  val progress = AtomicInteger()
+  val solution = AtomicLong()
+  (1 until limit)
+    .par
+    .foreach { e =>
+      if (progress.incrementAndGet() % 100000 == 0) {
+        println(s"did ${progress.incrementAndGet()}")
+      }
+      val fs = f(e)
+      if (fs.isPerfectSquare) {
+        println(s"$e > ${math.sqrt(fs)} (${divisorsOf(e).mkString(",")})")
+        solution.getAndAdd(fs)
+      }
+    }
+
+  println(s"Solution: $solution")
 }
 
 
