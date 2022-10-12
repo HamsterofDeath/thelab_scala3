@@ -12,6 +12,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.collection.parallel.CollectionConverters.{ArrayIsParallelizable, seqIsParallelizable}
 import scala.collection.{Searching, mutable}
 import scala.jdk.CollectionConverters.ConcurrentMapHasAsScala
+import scala.math.BigInt
 import scala.util.Random
 
 @main def euler55(): Unit = {
@@ -1035,6 +1036,31 @@ import scala.util.Random
     }
 
   println(s"Solution: $solution")
+}
+
+@main def euler120(): Unit = {
+
+  def remaindersOf(a: Int,modifier:Int) = {
+    val base  = BigInt(a + modifier)
+    val divBy = a * a
+    Iterator.from(1).map { n =>
+      base.modPow(n, divBy)
+    }
+  }
+
+  def remainders(a: Int): Iterator[Int] = {
+    val divBy = a * a
+    remaindersOf(a,-1).zip(remaindersOf(a,1)).map { (m, p) => ((m + p) % divBy).toIntSafe }
+  }
+
+  def max(a: Int) = {
+    val marker = remainders(a).next()
+    remainders(a).drop(1).takeWhile(_ != marker).max max marker
+  }
+
+  val maxs = 3 to 1000 map {max}
+
+  println(maxs.sum)
 }
 
 
