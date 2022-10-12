@@ -1050,7 +1050,9 @@ import scala.util.Random
 
   def remainders(a: Int): Iterator[Int] = {
     val divBy = a * a
-    remaindersOf(a,-1).zip(remaindersOf(a,1)).map { (m, p) => ((m + p) % divBy).toIntSafe }
+    remaindersOf(a,-1)
+      .zip(remaindersOf(a,1))
+      .map { (m, p) => ((m + p) % divBy).toIntSafe }
   }
 
   def max(a: Int) = {
