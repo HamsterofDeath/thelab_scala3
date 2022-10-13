@@ -755,6 +755,17 @@ package object euler {
     min
   }
 
+  def readerWriter[T](name:String,eval: => T) = {
+    dataReader(name).readObject {
+      val calculated = eval
+      val writer = dataWriter(name, false)
+      writer.writeObject(calculated)
+      writer.close()
+      calculated
+    }
+  }
+  
+  
   def dataReader(name: String) = {
     val file = openOrCreateFile(s"stream_$name")
     lazy val stream = DataInputStream(BufferedInputStream(FileInputStream(file)))
