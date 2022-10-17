@@ -4,6 +4,7 @@ import collection.parallel.CollectionConverters.ArrayIsParallelizable
 import java.io.FileReader
 import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.file.{Files, Paths}
+import java.util
 import java.util.concurrent.atomic.AtomicInteger
 import scala.util.Random
 
@@ -50,11 +51,11 @@ object FiveLetterWords {
       }
     }
 
-    def foreachExcept[U](code: Int)(cb: ((Array[Char], Int) => U)): Unit = {
-      foreachExcept(code, Array.tabulate[Char](5)(_ => ' '), 0)(cb)
+    def foreachExcept[U](code: Int, atLeast: Array[Char])(cb: ((Array[Char], Int) => U)): Unit = {
+      foreachExcept(code, Array.tabulate[Char](5)(_ => ' '), 0, atLeast)(cb)
     }
 
-    private def foreachExcept[U](code: Int, hack: Array[Char], hackCode: Int)
+    private def foreachExcept[U](code: Int, hack: Array[Char], hackCode: Int, atLeast: Array[Char])
                                 (cb: (Array[Char], Int) => U): Unit = {
       if (depth > 0) {
         hack(depth - 1) = ownLetter
@@ -62,8 +63,11 @@ object FiveLetterWords {
 
       if (hasWords) {
         nodes.foreach { subNode =>
-          if ((subNode.letterBit & code) == 0) {
-            subNode.foreachExcept(code, hack, hackCode | letterBit)(cb)
+          def isAtLeast = {
+            util.Arrays.compare(hack,0, depth,atLeast,0,depth) >=0
+          }
+          if ((subNode.letterBit & code) == 0 && isAtLeast) {
+            subNode.foreachExcept(code, hack, hackCode | letterBit, atLeast)(cb)
           }
         }
       } else if (isWord) {
@@ -93,31 +97,23 @@ object FiveLetterWords {
     val counter  = AtomicInteger(0)
     val progress = AtomicInteger(0)
     measured {
-      Random.shuffle(allWords).toArray.par.foreach { w1 =>
+      Random.shuffle(allWords).toArray.par.foreach { firstWord =>
         if (progress.incrementAndGet() % 100 == 0) {
           print('.')
         }
-        val level1 = wordToCode(w1)
-        root.foreachExcept(level1) { (secondWord, level2) =>
-          val w2 = secondWord.mkString
-          if (w1 < w2) {
-            val level12 = level1 | level2
-            root.foreachExcept(level12) { (thirdWord, level3) =>
-              val w3 = thirdWord.mkString
-              if (w2 < w3) {
-                val level123 = level12 | level3
-                root.foreachExcept(level123) { (forthWord, level4) =>
-                  val w4 = forthWord.mkString
-                  if (w3 < w4) {
-                    root.foreachExcept(level123 | level4) { (fifthWord, _) =>
-                      val w5 = fifthWord.mkString
-                      if (w4 < w5) {
-                        counter.incrementAndGet()
-                        //   println(s"$w1,$w2,$w3,$w4,$w5")
-                      }
-                    }
-                  }
-                }
+        val level1 = wordToCode(firstWord)
+        root.foreachExcept(level1, firstWord.toCharArray) { (secondWord, level2) =>
+          val w2      = secondWord.mkString
+          val level12 = level1 | level2
+          root.foreachExcept(level12, secondWord) { (thirdWord, level3) =>
+            val w3       = thirdWord.mkString
+            val level123 = level12 | level3
+            root.foreachExcept(level123, thirdWord) { (forthWord, level4) =>
+              val w4 = forthWord.mkString
+              root.foreachExcept(level123 | level4, forthWord) { (fifthWord, _) =>
+                val w5 = fifthWord.mkString
+                counter.incrementAndGet()
+                //   println(s"$w1,$w2,$w3,$w4,$w5")
               }
             }
           }
