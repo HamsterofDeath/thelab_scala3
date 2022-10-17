@@ -12,7 +12,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.collection.parallel.CollectionConverters.{ArrayIsParallelizable, seqIsParallelizable}
 import scala.collection.{Searching, mutable}
 import scala.jdk.CollectionConverters.ConcurrentMapHasAsScala
-import scala.math.{BigInt, abs}
+import scala.math.{BigInt, abs, max}
 import scala.util.Random
 
 @main def euler55(): Unit = {
@@ -1022,32 +1022,47 @@ import scala.util.Random
 }
 
 @main def euler276(): Unit = {
-  def solve(p:Int): Long = {
-    val maxPerimeter  = p
-    val maxSideLength = maxPerimeter / 3 + 1
 
-    def iterateFrom(start: Int, last: Int) = Iterator.from(start).takeWhile(_ <= last)
-
-    def solution = {
-      iterateFrom(1, maxSideLength)
-        .map { a =>
-          val subSum = {
-            iterateFrom(a, maxPerimeter / 2)
-              .map { b =>
-                val gcdTemp = gcdEuclid(a, b)
-                iterateFrom(b, a + b)
-                  .filter(c => a + b + c == maxPerimeter)
-                  .count(c => a + b > c && 1 == gcdEuclid(c, gcdTemp))
-                  .toLong
-              }.sum
-          }
-          subSum
-        }.sum
+  def foreachCoPrime[U](maxSum: Int)(cb: (Int, Int) => U): Unit = {
+    def recur(m: Int, n: Int): Unit = {
+      if (n + m <= maxSum) {
+        cb(n,m)
+        recur(2 * m - n, m)
+        recur(2 * m + n, m)
+        recur(m + 2 * n, n)
+      }
     }
-    solution
+    recur(2,1)
+    recur(3,1)
   }
 
-   1 to 100 foreach { i =>
-     print(s"${solve(i)},")
-   }
+  var count = 0L
+  foreachCoPrime(200000) {(a,b) =>
+    count += 1
+  }
+  println(count)
+
+  val maxPerimeter  = 100
+  val maxSideLength = maxPerimeter / 3 + 1
+
+  def iterateFrom(start: Int, last: Int) = Iterator.from(start).takeWhile(_ <= last)
+
+  def solution = {
+    iterateFrom(1, maxSideLength)
+      .map { a =>
+        val subSum = {
+          iterateFrom(a, maxPerimeter / 2)
+            .map { b =>
+              val gcdTemp = gcdEuclid(a, b)
+              iterateFrom(b, a + b)
+                .filter(c => a + b + c <= maxPerimeter)
+                .count(c => a + b > c && 1 == gcdEuclid(c, gcdTemp))
+                .toLong
+            }.sum
+        }
+        subSum
+      }.sum
+  }
+
+  print(solution)
 }
