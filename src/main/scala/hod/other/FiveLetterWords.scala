@@ -1,11 +1,11 @@
 package hod.other
 
-import collection.parallel.CollectionConverters.ArrayIsParallelizable
 import java.io.FileReader
 import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.file.{Files, Paths}
 import java.util
 import java.util.concurrent.atomic.AtomicInteger
+import scala.collection.parallel.CollectionConverters.ArrayIsParallelizable
 import scala.util.Random
 
 import hod.euler.measured
@@ -103,15 +103,12 @@ object FiveLetterWords {
         }
         val level1 = wordToCode(firstWord)
         root.foreachExcept(level1, firstWord.toCharArray) { (secondWord, level2) =>
-          val w2      = secondWord.mkString
           val level12 = level1 | level2
           root.foreachExcept(level12, secondWord) { (thirdWord, level3) =>
-            val w3       = thirdWord.mkString
             val level123 = level12 | level3
             root.foreachExcept(level123, thirdWord) { (forthWord, level4) =>
-              val w4 = forthWord.mkString
-              root.foreachExcept(level123 | level4, forthWord) { (fifthWord, _) =>
-                val w5 = fifthWord.mkString
+              val level1234 = level123 | level4
+              root.foreachExcept(level1234, forthWord) { (fifthWord, _) =>
                 counter.incrementAndGet()
                 //   println(s"$w1,$w2,$w3,$w4,$w5")
               }
