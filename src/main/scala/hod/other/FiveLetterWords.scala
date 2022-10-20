@@ -7,8 +7,9 @@ import java.util
 import java.util.concurrent.atomic.AtomicInteger
 import scala.collection.parallel.CollectionConverters.ArrayIsParallelizable
 import scala.util.Random
-
 import hod.euler.measured
+
+import java.util.concurrent.{ExecutorService, Executors, TimeUnit}
 
 object FiveLetterWords {
 
@@ -97,25 +98,32 @@ object FiveLetterWords {
     val counter  = AtomicInteger(0)
     val progress = AtomicInteger(0)
     measured {
-      Random.shuffle(allWords).toArray.par.foreach { firstWord =>
-        if (progress.incrementAndGet() % 100 == 0) {
-          print('.')
-        }
-        val level1 = wordToCode(firstWord)
-        root.foreachExcept(level1, firstWord.toCharArray) { (secondWord, level2) =>
-          val level12 = level1 | level2
-          root.foreachExcept(level12, secondWord) { (thirdWord, level3) =>
-            val level123 = level12 | level3
-            root.foreachExcept(level123, thirdWord) { (forthWord, level4) =>
-              val level1234 = level123 | level4
-              root.foreachExcept(level1234, forthWord) { (fifthWord, _) =>
-                counter.incrementAndGet()
-                //   println(s"$w1,$w2,$w3,$w4,$w5")
+      val service = Executors.newFixedThreadPool(30)
+      allWords.foreach { firstWord =>
+        service.submit(new Runnable {
+          override def run(): Unit = {
+            if (progress.incrementAndGet() % 100 == 0) {
+              print('.')
+            }
+            val level1 = wordToCode(firstWord)
+            root.foreachExcept(level1, firstWord.toCharArray) { (secondWord, level2) =>
+              val level12 = level1 | level2
+              root.foreachExcept(level12, secondWord) { (thirdWord, level3) =>
+                val level123 = level12 | level3
+                root.foreachExcept(level123, thirdWord) { (forthWord, level4) =>
+                  val level1234 = level123 | level4
+                  root.foreachExcept(level1234, forthWord) { (fifthWord, _) =>
+                    counter.incrementAndGet()
+                    //   println(s"$w1,$w2,$w3,$w4,$w5")
+                  }
+                }
               }
             }
           }
-        }
+        })
       }
+      service.shutdown()
+      service.awaitTermination(Long.MaxValue,TimeUnit.DAYS)
     }
     println("Done")
     println(counter.get())

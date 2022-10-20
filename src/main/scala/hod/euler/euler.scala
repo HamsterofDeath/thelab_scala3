@@ -254,37 +254,39 @@ package object euler {
   }
 
   def primeFactorsOf(n: Long): Iterator[Long] = {
-    var remaining = n
-    allPrimesLazy
-      .iterator
-      .takeWhilePlusOne(_ => remaining > 1)
-      .flatMap { prime =>
-        Iterator
-          .continually(prime)
-          .takeWhile(remaining % _ == 0)
-          .map { _ =>
-            remaining /= prime
-            prime
-          }
-      }
-
+    if (n == 0) Iterator.empty else {
+      var remaining = n
+      allPrimesLazy
+        .iterator
+        .takeWhilePlusOne(_ => remaining > 1)
+        .flatMap { prime =>
+          Iterator
+            .continually(prime)
+            .takeWhile(remaining % _ == 0)
+            .map { _ =>
+              remaining /= prime
+              prime
+            }
+        }
+    }
   }
 
   def primeFactorsOf(n: BigInt): Iterator[Long] = {
-    var remaining = n
-    allPrimesLazy
-      .iterator
-      .takeWhilePlusOne(_ => remaining > 1)
-      .flatMap { prime =>
-        Iterator
-          .continually(prime)
-          .takeWhile(remaining % _ == 0)
-          .map { _ =>
-            remaining /= prime
-            prime
-          }
-      }
-
+    if (n == 0) Iterator.empty else {
+      var remaining = n
+      allPrimesLazy
+        .iterator
+        .takeWhilePlusOne(_ => remaining > 1)
+        .flatMap { prime =>
+          Iterator
+            .continually(prime)
+            .takeWhile(remaining % _ == 0)
+            .map { _ =>
+              remaining /= prime
+              prime
+            }
+        }
+    }
   }
 
   def allPrimes: Iterator[Int] = {
@@ -755,7 +757,7 @@ package object euler {
     min
   }
 
-  def readerWriter[T](name:String,eval: => T) = {
+  def readerWriter[T](name: String, eval: => T) = {
     dataReader(name).readObject {
       val calculated = eval
       val writer = dataWriter(name, false)
@@ -764,8 +766,8 @@ package object euler {
       calculated
     }
   }
-  
-  
+
+
   def dataReader(name: String) = {
     val file = openOrCreateFile(s"stream_$name")
     lazy val stream = DataInputStream(BufferedInputStream(FileInputStream(file)))
