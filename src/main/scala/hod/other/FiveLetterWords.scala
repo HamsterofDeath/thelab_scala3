@@ -15,18 +15,8 @@ import scala.collection.Searching
 object FiveLetterWords {
 
   val aCode: Int = 'a'
-  val letters    = ('a' to 'z').toArray
 
   def letterToBit(c: Char) = 1 << (c - aCode)
-  def bitToLetter(code: Int) = {
-    var checkBit = 1
-    var index    = 0
-    while ((code & checkBit) == 0) {
-      checkBit <<= 1
-      index += 1
-    }
-    letters(index)
-  }
   def wordToCode(word: String) = {
     var code = 0
     word.foreach { c =>
@@ -34,10 +24,7 @@ object FiveLetterWords {
     }
     code
   }
-  def charToArrayIndex(c: Char) = c - aCode
-  def arrayIndexToChar(c: Int): Char = (c + aCode).toChar
-
-  def v2(): Unit = {
+  def solve(): Unit = {
     bench("Total") {
       val service = Executors.newFixedThreadPool(30)
       val count   = AtomicInteger()
@@ -53,25 +40,17 @@ object FiveLetterWords {
           .toArray
       }
 
-      def takeAfter(word: BitWord, words: IndexedSeq[BitWord]) = {
-        words.search(word) match
-          case Searching.Found(foundIndex) => words.drop(foundIndex)
-          case Searching.InsertionPoint(insertionPoint) => words.drop(insertionPoint)
-      }
-
-      case class BitWord(word: String, bits: Int) extends Comparable[BitWord] {
+      case class BitWord(word: String, bits: Int) {
         def overlapsWith(other: BitWord) = (other.bits & bits) != 0
-        override def compareTo(o: BitWord): Int = word.compareTo(o.word)
       }
 
       class WorkingSet(words: List[BitWord], code: Int, val wordPool: List[BitWord], depth: Int) {
-
         def recur(): Unit = {
           if (stepsLeft > 0) {
             forkEach(_.recur())
           } else {
             count.incrementAndGet()
-            println(currentSolution)
+//            println(currentSolution)
           }
         }
 
@@ -118,10 +97,11 @@ object FiveLetterWords {
 
       service.shutdown()
       service.awaitTermination(Long.MaxValue, TimeUnit.DAYS)
+      println(count)
     }
   }
 
   def main(args: Array[String]): Unit = {
-    v2()
+    solve()
   }
 }

@@ -128,7 +128,7 @@ package object euler {
     val start = System.nanoTime()
     val ret = t
     val end = System.nanoTime()
-    println(s"Operation took ${(end.toDouble - start) / 1000000000L} sec")
+    println(s"Operation '$name' took ${(end.toDouble - start) / 1000000000L} sec")
     ret
   }
 
