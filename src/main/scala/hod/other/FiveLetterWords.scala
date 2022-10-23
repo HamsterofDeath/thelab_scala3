@@ -7,9 +7,10 @@ import java.util
 import java.util.concurrent.atomic.AtomicInteger
 import scala.collection.parallel.CollectionConverters.ArrayIsParallelizable
 import scala.util.Random
-import hod.euler.measured
 
+import hod.euler.measured
 import java.util.concurrent.{ExecutorService, Executors, TimeUnit}
+import scala.collection.Searching
 
 object FiveLetterWords {
 
@@ -35,6 +36,15 @@ object FiveLetterWords {
   }
   def charToArrayIndex(c: Char) = c - aCode
   def arrayIndexToChar(c: Int): Char = (c + aCode).toChar
+
+  val allWords = String(
+    Files.readAllBytes(
+      Paths.get("resource/words_alpha.txt")),
+    StandardCharsets.UTF_8)
+    .linesIterator
+    .filter(e => Integer.bitCount(wordToCode(e)) == 5)
+    .filter(_.length == 5)
+    .toArray
 
   private class Node(val letterBit: Int, val depth: Int) {
     private      val ownLetter = if (depth > 0) bitToLetter(letterBit) else '?'
@@ -65,8 +75,9 @@ object FiveLetterWords {
       if (hasWords) {
         nodes.foreach { subNode =>
           def isAtLeast = {
-            util.Arrays.compare(hack,0, depth,atLeast,0,depth) >=0
+            util.Arrays.compare(hack, 0, depth, atLeast, 0, depth) >= 0
           }
+
           if ((subNode.letterBit & code) == 0 && isAtLeast) {
             subNode.foreachExcept(code, hack, hackCode | letterBit, atLeast)(cb)
           }
@@ -78,17 +89,9 @@ object FiveLetterWords {
 
     override def toString = s"$ownLetter"
   }
-  def main(args: Array[String]): Unit = {
 
-    val root     = Node(0, 0)
-    val allWords = String(
-      Files.readAllBytes(
-        Paths.get("resource/words_alpha.txt")),
-      StandardCharsets.UTF_8)
-      .linesIterator
-      .filter(e => Integer.bitCount(wordToCode(e)) == 5)
-      .filter(_.length == 5)
-      .toArray
+  def v1(): Unit = {
+    val root = Node(0, 0)
 
     allWords.foreach { word =>
       root.insert(word)
@@ -123,9 +126,86 @@ object FiveLetterWords {
         })
       }
       service.shutdown()
-      service.awaitTermination(Long.MaxValue,TimeUnit.DAYS)
+      service.awaitTermination(Long.MaxValue, TimeUnit.DAYS)
     }
     println("Done")
     println(counter.get())
+
+  }
+
+  def v2(): Unit = {
+    measured {
+      val count = AtomicInteger()
+
+      def takeAfter(word: BitWord, words: IndexedSeq[BitWord]) = {
+        words.search(word) match
+          case Searching.Found(foundIndex) => words.drop(foundIndex)
+          case Searching.InsertionPoint(insertionPoint) => words.drop(insertionPoint - 1)
+      }
+
+      case class BitWord(word: String, bits: Int) extends Comparable[BitWord] {
+        def overlapsWith(other: BitWord) = (other.bits & bits) != 0
+        override def compareTo(o: BitWord): Int = word.compareTo(o.word)
+      }
+
+      class WorkingSet(words: List[BitWord], code: Int, wordPool: IndexedSeq[BitWord], depth: Int) {
+
+        def stepsLeft = 5 - depth
+
+        def forked(nextWord: BitWord) = {
+          WorkingSet(
+            nextWord :: words,
+            code | nextWord.bits,
+            takeAfter(nextWord, wordPool)
+              .filterNot(_.overlapsWith(nextWord)),
+            depth + 1
+          )
+        }
+
+        def nextLevelCandidates = {
+          wordPool
+        }
+
+        def currentSolution = words.reverse.map(_.word)
+      }
+
+      val words = allWords.map(w => BitWord(w, wordToCode(w)))
+      val graph = words.map { bw => bw -> words.filterNot(_.overlapsWith(bw)).toIndexedSeq }.toMap
+
+
+      def recur(state: WorkingSet): Unit = {
+        val stepsLeft = state.stepsLeft
+        if (stepsLeft > 0) {
+          state.nextLevelCandidates.foreach { nextWord =>
+            recur(state.forked(nextWord))
+          }
+        } else {
+          count.incrementAndGet()
+          println(state.currentSolution)
+        }
+      }
+
+      val service = Executors.newFixedThreadPool(30)
+      words.foreach { start =>
+        service.submit(new Runnable {
+          override def run(): Unit = {
+            val helper = WorkingSet(
+              List(start),
+              start.bits,
+              takeAfter(start, graph(start)),
+              1)
+            recur(helper)
+          }
+        })
+      }
+      service.shutdown()
+      service.awaitTermination(Long.MaxValue, TimeUnit.DAYS)
+      println(count.get())
+    }
+
+  }
+
+  def main(args: Array[String]): Unit = {
+    v2()
   }
 }
