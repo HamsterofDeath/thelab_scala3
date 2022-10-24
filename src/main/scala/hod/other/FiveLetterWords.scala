@@ -5,12 +5,12 @@ import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.file.{Files, Paths}
 import java.util
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.{ExecutorService, Executors, TimeUnit}
+import scala.collection.Searching
 import scala.collection.parallel.CollectionConverters.ArrayIsParallelizable
 import scala.util.Random
 
 import hod.euler.{bench, measured}
-import java.util.concurrent.{ExecutorService, Executors, TimeUnit}
-import scala.collection.Searching
 
 object FiveLetterWords {
 
@@ -54,9 +54,10 @@ object FiveLetterWords {
             if (doMore) {
               var tail = wordPool
               while (tail.nonEmpty) {
-                val fork = {
-                  val nextWord = tail.head
-                  val pool     = tail.filterNot(_.overlapsWith(nextWord))
+                val tailOn = tail
+                def fork() = {
+                  val nextWord = tailOn.head
+                  val pool     = tailOn.filterNot(_.overlapsWith(nextWord))
                   WorkingSet(
                     nextWord :: words,
                     code | nextWord.bits,
@@ -66,7 +67,7 @@ object FiveLetterWords {
                 }
 
                 def doWork(): Unit = {
-                  fork.forkEach()
+                  fork().forkEach()
                 }
 
                 if (depth == 0) {
