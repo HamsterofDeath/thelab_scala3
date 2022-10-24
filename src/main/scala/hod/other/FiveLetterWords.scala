@@ -45,30 +45,28 @@ object FiveLetterWords {
       }
 
       class WorkingSet(words: List[BitWord], code: Int, val wordPool: List[BitWord], depth: Int) {
-        def recur(): Unit = {
-          if (stepsLeft > 0) {
-            forkEach(_.recur())
-          } else {
-            count.incrementAndGet()
-//            println(currentSolution)
-          }
-        }
-
         def stepsLeft = 5 - depth
 
-        def forkEach(cb: WorkingSet => Unit) = {
-          if (wordPool.nonEmpty) {
-            wordPool.tails.foreach { tryWords =>
-              if (tryWords.nonEmpty) {
-                def doWork(): Unit = {
-                  val nextWord = tryWords.head
-                  val pool     = tryWords.filterNot(_.overlapsWith(nextWord))
-                  cb(WorkingSet(
+        def forkEach(): Unit = {
+          val notDoneYet = stepsLeft > 0
+          if (notDoneYet) {
+            val doMore = notDoneYet && wordPool.nonEmpty
+            if (doMore) {
+              var tail = wordPool
+              while (tail.nonEmpty) {
+                val fork = {
+                  val nextWord = tail.head
+                  val pool     = tail.filterNot(_.overlapsWith(nextWord))
+                  WorkingSet(
                     nextWord :: words,
                     code | nextWord.bits,
                     pool,
                     depth + 1
-                  ))
+                  )
+                }
+
+                def doWork(): Unit = {
+                  fork.forkEach()
                 }
 
                 if (depth == 0) {
@@ -78,8 +76,11 @@ object FiveLetterWords {
                 } else {
                   doWork()
                 }
+                tail = tail.tail
               }
             }
+          } else {
+            count.incrementAndGet()
           }
         }
 
@@ -93,7 +94,8 @@ object FiveLetterWords {
         Nil,
         0,
         words.toList,
-        0).recur()
+        0)
+        .forkEach()
 
       service.shutdown()
       service.awaitTermination(Long.MaxValue, TimeUnit.DAYS)
