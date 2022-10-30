@@ -182,7 +182,7 @@ import scala.util.Random
 
   def dab(n: Long): Int = {
     val indexOnCompressedSequence = n / elementSize
-    val remainder                 = (n % elementSize)
+    val remainder                 = n % elementSize
     require(remainder.isValidInt)
     val isA       = solveFor(indexOnCompressedSequence)
     val character = if (isA) {
@@ -347,9 +347,6 @@ import scala.util.Random
 }
 
 @main def euler149(): Unit = {
-  extension (i: Int) {
-    def toBigInt = BigInt(i)
-  }
 
   val cache = mutable.HashMap.empty[Int, Int]
 
@@ -358,7 +355,7 @@ import scala.util.Random
       if (1 <= k && k <= 55) {
         ((100003.toBigInt - 200003.toBigInt * k + 300007L * k * k * k) % 1000000 - 500000).toInt
       } else if (56 <= k && k <= 4000000) {
-        ((laggedFibonacci(k - 24) + laggedFibonacci(k - 55) + 1000000) % 1000000 - 500000)
+        (laggedFibonacci(k - 24) + laggedFibonacci(k - 55) + 1000000) % 1000000 - 500000
       } else {
         throw RuntimeException()
       }
@@ -543,7 +540,7 @@ import scala.util.Random
       private var cursor            = -1;
       private val data              = Array.fill[Int](maxCount)(0)
 
-      def currrentlyPilingUp = {
+      def currrentlyPilingUp: Int = {
         if (cursor >= 0) data(cursor) else Int.MaxValue
       }
 
@@ -558,7 +555,7 @@ import scala.util.Random
         }
       }
 
-      def depth = cursor
+      def depth: Int = cursor
 
       def pop(): Unit = {
         encodedOccurences -= 1
@@ -568,7 +565,7 @@ import scala.util.Random
         }
       }
 
-      def occurrences = {
+      def occurrences: Iterable[Int] = {
         new Iterable[Int] {
           override def iterator: Iterator[Int] = new Iterator[Int] :
             private var source = encodedOccurences
@@ -583,7 +580,7 @@ import scala.util.Random
         }
       }
 
-      def uniqueHash = encodedOccurences
+      def uniqueHash: Long = encodedOccurences
     }
 
     case class Key(factors: Long, current: Int, hash: Long)
@@ -792,7 +789,7 @@ import scala.util.Random
   }
 
   measured {
-    val solutions = Random.shuffle((1 until maxN))
+    val solutions = Random.shuffle(1 until maxN)
                           .par
                           .filter(countSolutionsForY(_) == 10)
                           .toList
@@ -847,7 +844,7 @@ import scala.util.Random
       case None =>
         val saveMe = bench(s"Counting for $n") {
           val solutions: Long = {
-            Random.shuffle((min until maxEx))
+            Random.shuffle(min until maxEx)
                   .par
                   .count(exactlyOneSolution)
           }
@@ -860,7 +857,7 @@ import scala.util.Random
         saveMe
   }
 
-  val total = ((1 to (maxN / 1000000)).map(forNthMillion).sum)
+  val total = (1 to (maxN / 1000000)).map(forNthMillion).sum
   println(s"Final solution: $total")
 
 }

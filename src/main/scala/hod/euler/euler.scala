@@ -464,6 +464,7 @@ package object euler {
   }
 
   extension (i: Int) {
+    def toBigInt = BigInt(i)
     def isPrime: Boolean = {
       if (i % 2 == 0) return i == 2
       if (i % 3 == 0) return i == 3
