@@ -7,11 +7,12 @@ import java.util.concurrent.{Executors, TimeUnit}
 import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 
+//noinspection ScalaWeakerAccess
 package object euler {
 
   private val factorials = mutable.HashMap((0, BigInt.int2bigInt(1)))
 
-  def singleDigitFactorial(digit: Long) = {
+  def singleDigitFactorial(digit: Long): Int = {
     digit match {
       case 0 => 1
       case 1 => 1
@@ -39,7 +40,7 @@ package object euler {
                    fractions: Iterator[Int],
                    terms: Int,
                    precision: Int
-                 ) = {
+                 ): BigDecimal = {
     val mc = MathContext(precision, RoundingMode.HALF_UP)
     val one = BigDecimal(1, mc)
     val zero = BigDecimal(0, mc)
@@ -59,23 +60,23 @@ package object euler {
     BigDecimal(whole, mc) + (one / deepDive(terms))
   }
 
-  def euler(terms: Int, precision: Int) = {
+  def euler(terms: Int, precision: Int): BigDecimal = {
     val fractions =
       Iterator.from(1).flatMap(n => Iterator(1, n * 2, 1))
     approximate(2, fractions, terms, precision)
   }
 
-  def sqrt2(terms: Int, precision: Int) = {
+  def sqrt2(terms: Int, precision: Int): BigDecimal = {
     val fractions = Iterator.continually(2)
     approximate(1, fractions, terms, precision)
   }
 
-  def phi(terms: Int, precision: Int) = {
+  def phi(terms: Int, precision: Int): BigDecimal = {
     val fractions = Iterator.continually(1)
     approximate(1, fractions, terms, precision)
   }
 
-  def iterateLongs(from: Long) = {
+  def iterateLongs(from: Long): Iterator[Long] = {
     var cursor = from
     Iterator.continually {
       val ret = cursor
@@ -90,132 +91,28 @@ package object euler {
     ExecutionContext
       .fromExecutor(Executors.newFixedThreadPool(threadCount))
 
-  trait Foreach[T] {
-    self =>
-
-    def iterator = {
-      val buffer = mutable.ArrayBuffer.empty[T]
-      foreach(buffer += _)
-      buffer.iterator
-    }
-
-    def foreach[U](f: T => U): Unit
-
-    def map[N](f: T => N): Foreach[N] =
-      new Foreach[N] {
-        override def foreach[U](nf: N => U): Unit = {
-          self.foreach(e => nf(f(e)))
-        }
-      }
-  }
-
-  def noop(): Unit = {}
-
-  sealed trait ComparisonResult
-
-  case object TargetIsSmaller extends ComparisonResult
-
-  case object TargetIsEqual extends ComparisonResult
-
-  case object TargetIsBigger extends ComparisonResult
-
-  def measured[T](t: => T) = {
+  def measured[T](t: => T): T = {
     bench("Stuff")(t)
   }
 
-  def bench[T](name: String)(t: => T) = {
+  def bench[T](name: String)(t: => T): T = {
     println(s"Operation '$name' start")
     val start = System.nanoTime()
     val ret = t
     val end = System.nanoTime()
-    println(s"Operation '$name' took ${(end.toDouble - start) / 1000000000L} sec")
+    val diffNanos = end-start
+    val diffMillis = diffNanos / 1000000000
+    if(diffMillis>1000) {
+      println(s"Operation '$name' took ${(end.toDouble - start) / 1000000000L} sec")
+    } else {
+      println(s"Operation '$name' took ${(end.toDouble - start) / 1000000L} msec")
+    }
+
     ret
   }
 
-  abstract class SearchSpace[T] {
-    def nextHigherBound(t: T): T
 
-    def nextLowerBound(t: T): T
-
-    def determineMiddle(a: T, b: T): T
-
-    def compareTargetAgainst(reference: T): ComparisonResult
-
-  }
-
-  implicit class IterableOnceOps[T](val it: IterableOnce[T]) extends AnyVal {
-    def occurences = {
-      val data = mutable.HashMap.empty[T, Int]
-      it.iterator.foreach { e =>
-        if (data.contains(e)) {
-          data.put(e, data(e) + 1)
-        } else {
-          data.put(e, 1)
-        }
-      }
-      data
-    }
-  }
-
-  def approachBinary[T](start: T, searchSpace: SearchSpace[T]): Iterator[T] = {
-    var (min, max) = {
-      var adjustableLimit = start
-
-      def state: ComparisonResult = {
-        searchSpace.compareTargetAgainst(adjustableLimit)
-      }
-
-      state match {
-        case TargetIsSmaller =>
-          while (state == TargetIsSmaller) {
-            adjustableLimit = searchSpace.nextLowerBound(adjustableLimit)
-          }
-          (adjustableLimit, start)
-        case TargetIsEqual =>
-          (start, start)
-        case TargetIsBigger =>
-          while (state == TargetIsBigger) {
-            adjustableLimit = searchSpace.nextHigherBound(adjustableLimit)
-          }
-          (start, adjustableLimit)
-      }
-    }
-
-    var result = Option.empty[T]
-
-    def nextCloserElement() = {
-      val middle: T = searchSpace.determineMiddle(min, max)
-
-      val cmpMin = searchSpace.compareTargetAgainst(min)
-      val cmpMiddle = searchSpace.compareTargetAgainst(middle)
-      val cmpMax = searchSpace.compareTargetAgainst(max)
-      val nextTry = {
-        (cmpMin, cmpMiddle, cmpMax) match {
-          case (TargetIsBigger, TargetIsSmaller, _) =>
-            max = middle
-          case (_, TargetIsBigger, TargetIsSmaller) =>
-            min = middle
-          case (TargetIsEqual, _, _) =>
-            result = Some(min)
-          case (_, TargetIsEqual, _) =>
-            result = Some(middle)
-          case (_, _, TargetIsEqual) =>
-            result = Some(max)
-          case trip@_ =>
-            throw RuntimeException(
-              s"inconsistent state: $trip on $min, $middle, $max"
-            )
-        }
-        middle
-      }
-      nextTry
-    }
-
-    Iterator.continually(nextCloserElement()).stopAfter(_ => result.nonEmpty)
-
-  }
-
-  def countDivisorsOf(n: Long) = {
+  def countDivisorsOf(n: Long): Int = {
     var count = 0
     val limit = n / 2
     var test = 1
@@ -229,11 +126,11 @@ package object euler {
     count
   }
 
-  def divisorsOf(n: Long) = {
+  def divisorsOf(n: Long): Iterator[Long] = {
     properDivisorsOf(n) ++ Iterator.single(n)
   }
 
-  def properDivisorsOf(n: Long) = {
+  def properDivisorsOf(n: Long): Iterator[Long] = {
     n match {
       case 0 | 1 => Iterator.empty
       case 2 => Iterator.single(1L)
@@ -293,23 +190,9 @@ package object euler {
     allPrimesLong.takeWhile(_ <= Int.MaxValue).map(_.toInt)
   }
 
-  implicit class FileOps(f: File) {
-    def slurp = {
-      val in = FileReader(f)
-      val bin = BufferedReader(in, 4096)
-      Iterator.continually(bin.readLine()).takeWhile { e =>
-        val stop = e == null
-        if (stop) bin.close()
-        !stop
-      }
-    }
+  lazy val allPrimesLazy: LazyList[Long] = allPrimesLong.to(LazyList)
 
-    def slurpWhole = slurp.mkString("\n")
-  }
-
-  lazy val allPrimesLazy = allPrimesLong.to(LazyList)
-
-  def openOrCreateFile(name: String) = {
+  def openOrCreateFile(name: String): File = {
     val f = File(s"resource/$name.data")
     if (!f.exists()) {
       val ok = f.createNewFile()
@@ -401,15 +284,72 @@ package object euler {
       }
   }
 
-  implicit class IterableOps[T](val i: Iterable[T]) extends AnyVal {
-    def allValuesDistinct = i.toSet.size == i.size
+  def isReducedProperFraction(n: Long, d: Long): Boolean = gcdEuclid(n, d) == 1
+
+  def dynamicPrimeCheck(preloadUntil: Long): Long => Boolean = {
+    var max   = 0L
+    val cache = mutable.HashSet.empty[Long]
+    val func  = (n: Long) => {
+      if (max < n) {
+        cache ++= allPrimesLazy.dropWhile(_ <= max).takeWhile(_ <= n)
+        max = n
+      }
+      cache(n)
+    }
+    func(preloadUntil)
+    func
+  }
+
+  def gcdEuclid(a: Long, b: Long): Long = {
+    var max       = Math.max(a, b)
+    var min       = Math.min(a, b)
+    var remainder = max % min
+    while ( {
+      remainder != 0
+    }) {
+      max = min
+      min = remainder
+      remainder = max % min
+    }
+    min
+  }
+
+  extension (f: File) {
+    def slurp: Iterator[String] = {
+      val in  = FileReader(f)
+      val bin = BufferedReader(in, 4096)
+      Iterator.continually(bin.readLine()).takeWhile { e =>
+        val stop = e == null
+        if (stop) bin.close()
+        !stop
+      }
+    }
+
+    def slurpWhole: String = slurp.mkString("\n")
+  }
+
+  extension[T] (it: IterableOnce[T]) {
+    def occurences: mutable.HashMap[T, Int] = {
+      val data = mutable.HashMap.empty[T, Int]
+      it.iterator.foreach { e =>
+        if (data.contains(e)) {
+          data.put(e, data(e) + 1)
+        } else {
+          data.put(e, 1)
+        }
+      }
+      data
+    }
+  }
+  extension [T](i: Iterable[T]) {
+    def allValuesDistinct: Boolean = i.toSet.size == i.size
   }
 
   extension (l: Long) {
 
-    def sqr = l * l
+    def sqr: Long = l * l
 
-    def toIntSafe = {
+    def toIntSafe: Int = {
       require(l.toInt == l)
       l.toInt
     }
@@ -421,7 +361,7 @@ package object euler {
       df.format(l)
     }
 
-    def allDigits = l.toString.iterator.map(_.getNumericValue)
+    def allDigits: Iterator[Int] = l.toString.iterator.map(_.getNumericValue)
 
     def digitCount: Int = allDigits.size
 
@@ -581,10 +521,6 @@ package object euler {
     }
   }
 
-  def stop() = {
-    println("stop")
-  }
-
   extension (bi: BigInt) {
 
     def getDigitCount: Int = {
@@ -599,15 +535,15 @@ package object euler {
 
     def digits: Iterator[Int] = bi.toString().iterator.map(Character.getNumericValue)
 
-    def sqrtNatural = BigInt(bi.bigInteger.sqrt)
+    def sqrtNatural: BigInt = BigInt(bi.bigInteger.sqrt)
 
-    def isPerfectSquare = {
+    def isPerfectSquare: Boolean = {
       val java = bi.bigInteger
       val sqrt = java.sqrt
       (sqrt multiply sqrt) == java
     }
 
-    def sqrt(scale: Int) = {
+    def sqrt(scale: Int): BigDecimal = {
       val mc = MathContext(scale + 1, java.math.RoundingMode.HALF_UP)
       BigDecimal.decimal(
         java.math.BigDecimal(bi.bigInteger, mc).sqrt(mc),
@@ -615,11 +551,11 @@ package object euler {
       )
     }
 
-    def toBigDecimal = {
+    def toBigDecimal: BigDecimal = {
       BigDecimal(java.math.BigDecimal(bi.bigInteger))
     }
 
-    def toIntSafe = {
+    def toIntSafe: Int = {
       bi.bigInteger.intValueExact()
     }
 
@@ -727,37 +663,7 @@ package object euler {
     }
   }
 
-  def isReducedProperFraction(n: Long, d: Long): Boolean = gcdEuclid(n, d) == 1
-
-  def dynamicPrimeCheck(preloadUntil: Long) = {
-    var max = 0L
-    val cache = mutable.HashSet.empty[Long]
-    val func = (n: Long) => {
-      if (max < n) {
-        cache ++= allPrimesLazy.dropWhile(_ <= max).takeWhile(_ <= n)
-        max = n
-      }
-      cache(n)
-    }
-    func(preloadUntil)
-    func
-  }
-
-  def gcdEuclid(a: Long, b: Long) = {
-    var max = Math.max(a, b)
-    var min = Math.min(a, b)
-    var remainder = max % min
-    while ( {
-      remainder != 0
-    }) {
-      max = min
-      min = remainder
-      remainder = max % min
-    }
-    min
-  }
-
-  def readerWriter[T](name: String, eval: => T) = {
+  def readerWriter[T](name: String, eval: => T): T = {
     dataReader(name).readObject {
       val calculated = eval
       val writer = dataWriter(name, false)
@@ -767,8 +673,7 @@ package object euler {
     }
   }
 
-
-  def dataReader(name: String) = {
+  def dataReader(name: String): DataReader = {
     val file = openOrCreateFile(s"stream_$name")
     lazy val stream = DataInputStream(BufferedInputStream(FileInputStream(file)))
     new DataReader :
@@ -817,7 +722,7 @@ package object euler {
 
     def close(): Unit
 
-    def writeObject[T](t: T) = {
+    def writeObject[T](t: T): Unit = {
       doWithStream { dos =>
         val stream = new ObjectOutputStream(dos)
         stream.writeObject(t)
@@ -828,9 +733,9 @@ package object euler {
   }
 
   trait DataReader {
-    def processAndClose[T](cb: (DataInputStream) => T): T
+    def processAndClose[T](cb: DataInputStream => T): T
 
-    def readObject[T](default: => T) = {
+    def readObject[T](default: => T): T = {
       processAndClose[T] { dis =>
         try {
           new ObjectInputStream(dis).readObject().asInstanceOf[T]
