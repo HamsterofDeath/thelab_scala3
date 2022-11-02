@@ -101,7 +101,7 @@ package object euler {
     val ret = t
     val end = System.nanoTime()
     val diffNanos = end-start
-    val diffMillis = diffNanos / 1000000000
+    val diffMillis = diffNanos / 1000000
     if(diffMillis>1000) {
       println(s"Operation '$name' took ${(end.toDouble - start) / 1000000000L} sec")
     } else {
