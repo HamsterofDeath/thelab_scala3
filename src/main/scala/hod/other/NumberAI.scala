@@ -10,17 +10,8 @@ object NumberAI {
 
   case class PointInAiSpace(data: String, label: String) {
     val flat           = data.replace("\n", "")
-    val bitSet         = {
-      BitSet.fromSpecific(flat.zipWithIndex.filter(_._1 == '1').map(_._2))
-    }
-    val negativeBitSet = {
-      BitSet.fromSpecific(flat.zipWithIndex.filter(_._1 == '0').map(_._2))
-    }
 
     require(flat.length == 1024)
-    def distanceTo(other: PointInAiSpace): Int = {
-      distanceTo(other.flat)
-    }
 
     def distanceTo(other: String): Int = {
       flat.zip(other).map((a, b) => if (a == b) 0 else 1).sum
