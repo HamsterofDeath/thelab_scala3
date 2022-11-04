@@ -28,43 +28,29 @@ object NumberAI {
 
   }
 
-  class Clusters(data: List[PointInAiSpace]) {
-    val limit  = 30
-    val wisdom = data.groupBy(_.label)
+  class LOOCV(data: List[PointInAiSpace]) {
 
-    val condensedMatches = {
-      wisdom.view.mapValues(samples => {
-        val counts = Array.fill[Int](1024)(0)
-        samples.map(_.bitSet).foreach { bs =>
-          bs.foreach { i =>
-            counts(i) += 1
-          }
-        }
-        BitSet.fromSpecific(counts.zipWithIndex.filter(_._1 > limit).map(_._2))
-      }).toMap
-    }
-
-    def formattedOnes(label: String) = {
-      (0 until 1024).map { i =>
-        if (condensedMatches(label)(i)) "1" else "0"
-      }
-                    .mkString
-                    .grouped(32)
-                    .mkString("\n")
-    }
-
-    def findNearest(data32x32: String): (String, Int) = {
+    def findNearest(data32x32: String) = {
       require(data32x32.length == 1024, s"Length was ${data32x32.length}")
-      wisdom.iterator.map({ case (label, dataPoints) => {
-        label -> dataPoints.map(_.distanceTo(data32x32)).min
+      data
+        .iterator
+        .filter(_.flat != data32x32)
+        .minBy(_.distanceTo(data32x32))
+    }
+
+    def loocv(): Unit = {
+      val errors = data.filter { testCase =>
+        testCase.label != findNearest(testCase.flat).label
       }
-      }).minBy(_._2)
+      errors.foreach { error =>
+        println(s"Incorrectly classified\n${error.data}\nas ${findNearest(error.flat).label}")
+      }
     }
   }
 
   def main(args: Array[String]): Unit = {
     val data = {
-      Random.shuffle(Files.readString(File("resource/bitmap.txt").toPath)
+      Files.readString(File("resource/bitmap.txt").toPath)
                           .linesIterator
                           .map { block => block.grouped(32).mkString("\n") }
                           .zipWithIndex
@@ -73,54 +59,9 @@ object NumberAI {
                             case n if n < 100 => "1"
                             case _ => "8"
                           ))
-                          .toList)
+                          .toList
     }
-
-    val c = Clusters(data)
-    println(c.formattedOnes("0"))
-    println(c.formattedOnes("1"))
-    println(c.formattedOnes("8"))
-    val result = {
-      c.findNearest {
-        val testIn =
-          s"""00000000000111111111100000000000
-             |00000000000111111111100000000000
-             |00000000000111111111100000000000
-             |00000000000111111111100000000000
-             |00000000000111111111100000000000
-             |00000000000111111111100000000000
-             |00000000000111111111100000000000
-             |00000000000111111111100000000000
-             |00000000000111111111100000000000
-             |00000000000111111111100000000000
-             |00000000000111111111100000000000
-             |00000000000111111111100000000000
-             |00000000000111111111100000000000
-             |00000000000111111111100000000000
-             |00000000000111111111100000000000
-             |00000000000111111111100000000000
-             |00000000000111111111100000000000
-             |00000000000111111111100000000000
-             |00000000000111111111100000000000
-             |00000000000111111111100000000000
-             |00000000000111111111100000000000
-             |00000000000111111111100000000000
-             |00000000000111111111100000000000
-             |00000000000111111111100000000000
-             |00000000000111111111100000000000
-             |00000000000111111111100000000000
-             |00000000000111111111100000000000
-             |00000000000111111111100000000000
-             |00000000000111111111100000000000
-             |00000000000111111111100000000000
-             |00000000000111111111100000000000
-             |00000000000111111111100000000000""".stripMargin
-        testIn
-          .replace("\r", "")
-          .replace("\n", "")
-          .trim
-      }
-    }
-    println(result)
+    val c = LOOCV(data)
+    c.loocv()
   }
 }
