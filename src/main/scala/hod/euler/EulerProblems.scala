@@ -1023,18 +1023,19 @@ import scala.util.Random
   def foreachCoPrime[U](maxSum: Int)(cb: (Int, Int) => U): Unit = {
     def recur(m: Int, n: Int): Unit = {
       if (n + m <= maxSum) {
-        cb(n,m)
+        cb(n, m)
         recur(2 * m - n, m)
         recur(2 * m + n, m)
         recur(m + 2 * n, n)
       }
     }
-    recur(2,1)
-    recur(3,1)
+
+    recur(2, 1)
+    recur(3, 1)
   }
 
   var count = 0L
-  foreachCoPrime(200000) {(a,b) =>
+  foreachCoPrime(200000) { (a, b) =>
     count += 1
   }
   println(count)
@@ -1062,4 +1063,28 @@ import scala.util.Random
   }
 
   print(solution)
+}
+
+@main def euler86(): Unit = {
+  def shortestPathIsInteger(a: Int, b: Int, c: Int): Boolean = {
+    def lengthSqrOf(first: Int, second: Int) = first * first + second * second
+
+    val path1    = lengthSqrOf(a + b, c)
+    val path2    = lengthSqrOf(a + c, b)
+    val shortest = path1 min path2
+    shortest.isPerfectSquare
+  }
+
+  def count(m: Int) = {
+    (1 to m).par.map { a =>
+      (a to m).map { b =>
+        (b to m).count { c =>
+          shortestPathIsInteger(a, b, c)
+        }
+      }.sum
+    }.sum
+  }
+
+  println(count(1817))
+  println(count(1818))
 }
