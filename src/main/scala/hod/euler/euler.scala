@@ -559,6 +559,9 @@ package object euler {
     def toIntSafe: Int = {
       bi.bigInteger.intValueExact()
     }
+    def toLongSafe: Long = {
+      bi.bigInteger.longValueExact()
+    }
 
   }
 

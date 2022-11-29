@@ -567,7 +567,7 @@ import scala.util.Random
 
       def occurrences: Iterable[Int] = {
         new Iterable[Int] {
-          override def iterator: Iterator[Int] = new Iterator[Int] :
+          override def iterator: Iterator[Int] = new Iterator[Int]:
             private var source = encodedOccurences
 
             override def hasNext: Boolean = source > 0
@@ -1087,4 +1087,41 @@ import scala.util.Random
 
   println(count(1817))
   println(count(1818))
+}
+
+@main def euler142(): Unit = {
+  def findLowerNumberInTheMiddle(xpy: Long) = {
+    allSquares.takeWhile(_ < xpy)
+              .map(_.toLongSafe)
+              .filter { xmy =>
+                val y2 = xpy - xmy
+                y2 % 2 == 0
+              }.map { xmy => (xpy - xmy) / 2 }
+  }
+
+  val tuples = allSquares.map(_.toLongSafe)
+                         .flatMap { xpy =>
+                           findLowerNumberInTheMiddle(xpy)
+                             .map { y =>
+                               val x = xpy - y
+                               (x, y)
+                             }
+                         }
+  val seenX  = new mutable.HashMap[Long, mutable.Set[Long]]() with mutable.MultiMap[Long, Long]
+  tuples.foreach { (x, y) =>
+    if (seenX.contains(y)) {
+      val zs = seenX(y)
+      zs.foreach { z =>
+        val xpz = (x + z).isPerfectSquare
+        val xmz = (x - z).isPerfectSquare
+        val ok  = xpz && xmz
+        if (ok) {
+          println(x + y + z)
+          System.exit(0)
+        }
+      }
+    } else {
+      seenX.addBinding(x, y)
+    }
+  }
 }
