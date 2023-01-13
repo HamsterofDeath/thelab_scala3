@@ -4,56 +4,104 @@ import collection.parallel.CollectionConverters.RangeIsParallelizable
 import scala.collection.mutable
 
 import hod.euler.{gcdEuclid, *}
+import collection.parallel.CollectionConverters.IterableIsParallelizable
 
 object LessesMore {
 
   case class Quad(a: Int, b: Int, c: Int, d: Int) {
 
-    def simpler = {
-      if (a>0&&b>0&&c>0&&d>0) {
-        val div = gcdEuclid(a, gcdEuclid(b, gcdEuclid(c, d))).toInt
-        Quad(a / div, b / div, c / div, d / div)
-      } else {
-        this
-      }
+    self =>
 
+    def rotated = Quad(b, c, d, a)
+    def rotatedReverse = Quad(d, a, b, c)
+
+    def max = a max b max c max d
+    def min = a min b min c min d
+
+    lazy val steps: Int = 1 + (if (next.nonZero) next.steps else 0)
+
+    def traverseAll[T](onAnyNode: Quad => T): Unit = {
+      var start = self
+      val limit  = self.next.max
+      while (start.min <= limit || start == self) {
+        onAnyNode(start)
+        start.generatePrevsV2.foreach(_.traverseAll(onAnyNode))
+        start = start.oneMore
+      }
     }
 
-    def debug = s"Edges $a,$b,$c,$d, sum $sum"
+    def oneMore = Quad(a + 1, b + 1, c + 1, d + 1)
+
+    def generatePrevsV2 = {
+      val ret = mutable.ArrayBuffer.empty[Quad]
+      foreachPrevV2(ret += _)
+      ret.distinct.toList
+    }
+
+    def foreachPrevV2[T](onSolution: Quad => T) = {
+      var rotations = 0
+
+      def rotBack(q: Quad) = {
+        var count = rotations
+        var ret   = q
+        while (count > 0) {
+          ret = ret.rotatedReverse
+          count -= 1
+        }
+        ret
+      }
+
+      var reference = self
+      while (rotations < 4) {
+        def buildSolutions(valid: mutable.ArrayBuffer[Int]): Unit = {
+          def lastAdded = valid.last
+
+          def nextToReach = valid.size match {
+            case 1 => reference.a
+            case 2 => reference.b
+            case 3 => reference.c
+            case 4 => reference.d
+          }
+
+          if (valid.size < 4) {
+            val ifDifferenceRemoved = lastAdded - nextToReach
+            if (ifDifferenceRemoved >= 0) {
+              valid += ifDifferenceRemoved
+              buildSolutions(valid)
+              valid.remove(valid.size - 1)
+            }
+            valid += (lastAdded + nextToReach)
+            buildSolutions(valid)
+            valid.remove(valid.size - 1)
+          } else {
+            if (math.abs(valid.last - valid.head) == nextToReach) {
+              val mutable.ArrayBuffer(a, b, c, d) = valid
+              val quad                            = Quad(a, b, c, d)
+              if (quad.nonZero && quad != reference) {
+                onSolution(rotBack(quad))
+              }
+            }
+          }
+        }
+
+        buildSolutions(mutable.ArrayBuffer(0))
+
+        rotations += 1
+        reference = reference.rotated
+      }
+    }
+
+    def debug = "".padTo(steps, ' ') + s"-> Edges $a,$b,$c,$d, sum $sum, depth $steps"
 
     def sum = a + b + c + d
 
-    def notAboveLimit = a < 10_000_000 &&
-                        b < 10_000_000 &&
-                        c < 10_000_000 &&
-                        d < 10_000_000
-    def next = {
+    lazy val next = {
       Quad(math.abs(a - b), math.abs(b - c), math.abs(c - d), math.abs(d - a))
     }
 
-    def generateValues(ab: Int, bc: Int, cd: Int, da: Int): Iterator[(Int, Int, Int, Int)] = {
-      val max       = (ab + bc + cd + da + 1)
-      val solutions = for {
-        a <- (0 to max).iterator if a != ab
-        b <- 0 to max if (a - b).abs == ab && b != bc
-        c <- 0 to max if (b - c).abs == bc && c != cd
-        d <- 0 to max if (c - d).abs == cd && (d - a).abs == da && d != da
-      } yield (a, b, c, d)
-
-      solutions
-    }
-
-    def prev: Iterator[Quad] = {
-      generateValues(a, b, c, d).map((w, x, y, z) => Quad(w, x, y, z))
-
-    }
-
-    def diffAB = math.abs(a - b)
-    def diffBC = math.abs(b - c)
-    def diffCD = math.abs(c - d)
-    def diffDA = math.abs(d - a)
     def nonZero = a + b + c + d > 0
   }
+
   def buildSeq(start: Quad) = {
     Iterator.iterate(start)(_.next).takeWhilePlusOne { e =>
       e.nonZero
@@ -63,75 +111,36 @@ object LessesMore {
   def testRun(a: Int, b: Int, c: Int, d: Int): Unit = {
     val steps = buildSeq(Quad(a, b, c, d)).toList
     println(steps.map(_.debug).mkString("\n"))
+    if (a > 0) {
+      println(
+        steps.reverse.sliding(2, 1).map { case List(a, b) => a.a.toDouble / b.a }.mkString(", "))
+      println(steps.reverse.sliding(2, 1).map { case List(a, b) => b.a - a.a }.mkString(", "))
+      println(s"GCD ${steps.filter(_.a > 0).map(_.a.toLong).reduce(gcdEuclid)}")
+    }
     println(steps.size)
   }
 
   def testRun(q: Quad): Unit = {
-    println(primeFactorsOf(q.a).toList)
-    println(primeFactorsOf(q.b).toList)
-    println(primeFactorsOf(q.c).toList)
-    println(primeFactorsOf(q.d).toList)
-    println(q.simpler)
     testRun(q.a, q.b, q.c, q.d)
   }
 
-  def countSteps(q: Quad) = {
-    //cache.getOrElseUpdate(q, buildSeq(q).size)
-    buildSeq(q).size
-  }
-
-  val cache = mutable.HashMap.empty[Quad, Int]
-
-  def backwards(q: Quad) = {
-    def recur(nq: Quad, step: Int, sum: Int): Unit = {
-      val prev = nq.prev
-      if (prev.isEmpty) {
-        println(s"$nq, $sum, $step")
-      } else {
-        prev.foreach { nxt =>
-          recur(nxt, step + 1, nxt.sum)
-        }
-
-      }
-    }
-
-    recur(q, 0, q.sum)
-  }
-
-  def brandom(): Unit = {
-    var best = Quad(0, 0, 0, 0)
-    while (true) {
-      def random = Math.random() * 10_000_000
-
-      val List(a, b, c, d) = List(random, random,
-        random, random).sorted.map(_.toInt)
-      val test             = Quad(a, b, c, d)
-      if (countSteps(test) > countSteps(best)) {
-        println(s"$test, (${test.simpler}) ${countSteps(test)}: ${buildSeq(test).map(_.debug).toList}")
-        best = test
-      }
-    }
-  }
-
   def main(args: Array[String]): Unit = {
-    //testRun(Quad(7,999,123,12345678))
-    //testRun(Quad(1168608,1737645,2784259,4709289))
-    testRun(Quad(2,2,0,2))
-    brandom()
-    val max      = 800
-    println()
-    val testUs = for {
-      a <- (1 to max).par
-      b <- allPrimesLazy.dropWhile(_< a).takeWhile(_ <= max)
-      c <- allPrimesLazy.dropWhile(_< b).takeWhile(_ <= max)
-      d <- allPrimesLazy.dropWhile(_< c).takeWhile(_ <= max)
-    } yield (a, b.toInt, c.toInt, d.toInt)
+    var best  = Option.empty[Quad]
+    val guess = 1 << 13
+    var count = 0
 
-    println(testUs.size)
-    val q      = testUs.iterator.map { case e@(a, b, c, d) =>
-      e -> buildSeq(Quad(a, b, c, d)).size
-    }.maxBy(_._2)
-    println(buildSeq(Quad(q._1._1, q._1._2, q._1._3, q._1._4)).toList)
-    println(buildSeq(Quad(q._1._1, q._1._2, q._1._3, q._1._4)).size)
+    Quad(guess, guess, guess, guess)
+      //    Quad(10,6,3,1)
+      .traverseAll { candidate =>
+        count += 1
+        if (best.isEmpty || best.get.steps < candidate.steps ||
+            best.get.steps == candidate.steps && best.get.sum > candidate.sum) {
+          println(s"NEXT: $count")
+          testRun(candidate)
+          best = Some(candidate)
+        }
+      }
+    println(best)
+    println("!!! " + count + "@ "+guess)
   }
 }
