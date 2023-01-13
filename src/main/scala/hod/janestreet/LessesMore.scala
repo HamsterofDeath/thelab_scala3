@@ -130,7 +130,6 @@ object LessesMore {
     var count = 0
 
     Quad(guess, guess, guess, guess)
-      //    Quad(10,6,3,1)
       .traverseAll { candidate =>
         count += 1
         if (best.isEmpty || best.get.steps < candidate.steps ||
