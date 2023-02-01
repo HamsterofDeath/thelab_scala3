@@ -6,6 +6,7 @@ import java.nio.file.{Files, Paths}
 import scala.collection.immutable.BitSet
 import scala.util.Random
 
+
 object NumberAI {
 
   case class PointInAiSpace(data: String, label: String) {
