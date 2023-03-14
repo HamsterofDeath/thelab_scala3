@@ -1174,3 +1174,39 @@ import scala.util.Random
     }
   }
 }
+
+@main def euler179():Unit = {
+  val limit = 10000000
+  val divisorsCount = Array.fill(limit + 1)(0)
+
+  for (i <- 1 to limit / 2) {
+    for (j <- i * 2 to limit by i) {
+      divisorsCount(j) += 1
+    }
+  }
+
+  val result = (1 until limit).count(n => divisorsCount(n) == divisorsCount(n + 1))
+  println(s"The number of integers 1 < n < $limit, for which n and n + 1 have the same number of positive divisors is: $result")
+}
+
+@main def euler187():Unit = {
+  val limit = 100000000
+  val primes = allPrimes.takeWhile( _ <= limit).toVector
+  var count = 0L
+  var i = 0
+  while (i < primes.length) {
+    var j = i
+    while (j < primes.length) {
+      val composite = primes(i) * primes(j)
+      if (composite < limit) {
+        count += 1
+      } else {
+        j = primes.length // Break the inner loop since the composites will only increase.
+      }
+      j += 1
+    }
+    i += 1
+  }
+
+  println(s"There are $count composite integers n < ${limit} having precisely two, not necessarily distinct, prime factors.")
+}
