@@ -89,7 +89,7 @@ object ZeroPlayerWordle {
           }
         }
       }
-      println(s"Cannot be solution: ${drop.map(_.word).mkString(", ")}")
+      println(s"Cannot be a solution: ${drop.map(_.word).mkString(", ")}")
       keep
     }
 
