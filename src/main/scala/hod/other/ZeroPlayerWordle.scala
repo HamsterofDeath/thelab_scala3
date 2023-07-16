@@ -3,6 +3,7 @@ package hod.other
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 import scala.collection.parallel.CollectionConverters.seqIsParallelizable
+import scala.collection.parallel.ParSeq
 import scala.util.Random
 
 object ZeroPlayerWordle {
@@ -14,8 +15,9 @@ object ZeroPlayerWordle {
       .toList)
   }
 
-  class Game {
+  class Game(optimizeAvg:Boolean) {
     private val solutionWord = allWords.toVector(scala.util.Random.nextInt(allWords.size))
+    //private val solutionWord = "axe"
     private val potentialWords = allWords.filter(_.length == solutionWord.length)
 
     case class GuessWord(word: String, feedback: Long)
@@ -72,7 +74,7 @@ object ZeroPlayerWordle {
 
     def remainingAfterGuess(guess: String): List[GuessWord] = {
       val guessWord = pool.find(_.word == guess).get
-      val (keep, drop) = pool.partition { candidate =>
+      val keep = pool.filter { candidate =>
         // Check if the candidate is still possible
         val candidateFeedback = feedbackToLong(candidate.word)
         val guessFeedback = guessWord.feedback
@@ -89,18 +91,17 @@ object ZeroPlayerWordle {
           }
         }
       }
-      println(s"Cannot be a solution: ${drop.map(_.word).mkString(", ")}")
       keep
     }
 
 
-    def selectBestGuess() = {
+    def selectBestGuess = {
       println("Selecting best guess")
       val totalSize = pool.size
       var count = 0
       val percentCounter = totalSize / 100
       var needsLine = false
-      val worstCaseRemaining = pool.par.map { guessWord =>
+      val caseRemaining = pool.par.map { guessWord =>
         // update progress
         count += 1
         if (percentCounter > 0 && count % percentCounter == 0) {
@@ -113,36 +114,76 @@ object ZeroPlayerWordle {
           (candidate, feedbackToLong(candidate.word, guessWord.word))
         }.groupBy(_._2)
 
-        val maxWordsLeft = possibleFeedbacks.values.map(_.size).max
-        (guessWord, maxWordsLeft)
+        val score:Double = {
+          val sums = possibleFeedbacks.valuesIterator.map(_.size)
+          if(optimizeAvg) {
+            sums.sum.toDouble / possibleFeedbacks.values.size
+          } else {
+            sums.max
+          }
+        }
+        (guessWord, score)
       }
       if (needsLine) {
         println()
       }
-      val targetScore = worstCaseRemaining.minBy(_._2)._2
-      val options = worstCaseRemaining.filter(_._2 == targetScore)
-      println(s"There are ${options.size} best options, choosing one at random")
+      val targetScore = caseRemaining.minBy(_._2)._2
+      val options = caseRemaining.filter(_._2 == targetScore)
+      println(s"There are ${options.size} best options (${options.map(_._1.word).mkString(", ")}), " +
+        s"choosing one at random - ${if(optimizeAvg) "average" else "worst"} case: $targetScore 'left'")
       options(Random.nextInt(options.size))._1
     }
 
-    def play(): Unit = {
+    def play(): Int = {
       println(s"Chosen: $solutionWord")
       var rounds = 0
       while (pool.size > 1) {
-        val guess = selectBestGuess()
+        val guess = selectBestGuess
         rounds += 1
         println(s"Guessed $guess, feedback is ${feedbackToString(guess.feedback, guess.word.length)}")
 
+        val prevSize = pool.size
         val remaining = remainingAfterGuess(guess.word)
         pool = remaining
 
+        val removed = prevSize - pool.size
+        val removedPercentage = 100 * removed.toFloat / prevSize.toFloat
+
         println(s"There are ${pool.size} potential words left")
+        println(f"Removed $removed elements, which is $removedPercentage%.2f%% of the previous total")
       }
       println(s"The word is ${pool.head.word}, found after $rounds guesses")
+      rounds
     }
   }
 
   def main(args: Array[String]): Unit = {
-    new Game().play()
+    System.setProperty("scala.concurrent.context.maxThreads", "12")
+    new Game(false).play()
+  }
+
+}
+
+object ZeroPlayerWordleBenchmark {
+  def main(args: Array[String]): Unit = {
+    System.setProperty("scala.concurrent.context.maxThreads", "12") // Replace 4 with the desired number of threads
+
+    val numTrials = 500
+    val roundsMinimizeAvg = new Array[Int](numTrials)
+    val roundsMinimizeWorst = new Array[Int](numTrials)
+
+    for (i <- 0 until numTrials) {
+      println(s"Minimize average trial ${i + 1}")
+      roundsMinimizeAvg(i) = new ZeroPlayerWordle.Game(optimizeAvg = true).play()
+      println(s"Minimize worst case trial ${i + 1}")
+      roundsMinimizeWorst(i) = new ZeroPlayerWordle.Game(optimizeAvg = false).play()
+    }
+
+    val avgRoundsMinimizeAvg = roundsMinimizeAvg.sum / numTrials.toDouble
+    val avgRoundsMinimizeWorst = roundsMinimizeWorst.sum / numTrials.toDouble
+
+    println(s"Average rounds to guess the word (minimize avg): $avgRoundsMinimizeAvg")
+    println(s"Average rounds to guess the word (minimize worst): $avgRoundsMinimizeWorst")
   }
 }
+
