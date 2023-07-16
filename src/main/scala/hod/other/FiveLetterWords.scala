@@ -1,5 +1,7 @@
 package hod.other
 
+import hod.euler.{bench, measured}
+
 import java.io.FileReader
 import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.file.{Files, Paths}
@@ -10,13 +12,12 @@ import scala.collection.Searching
 import scala.collection.parallel.CollectionConverters.ArrayIsParallelizable
 import scala.util.Random
 
-import hod.euler.{bench, measured}
-
 object FiveLetterWords {
 
   val aCode: Int = 'a'
 
   def letterToBit(c: Char) = 1 << (c - aCode)
+
   def wordToCode(word: String) = {
     var code = 0
     word.foreach { c =>
@@ -24,21 +25,23 @@ object FiveLetterWords {
     }
     code
   }
+
+  lazy val allWords = bench("Load words") {
+    String(
+      Files.readAllBytes(
+        Paths.get("resource/words_alpha.txt")),
+      StandardCharsets.UTF_8)
+      .linesIterator
+      .filter(e => Integer.bitCount(wordToCode(e)) == 5)
+      .filter(_.length == 5)
+      .toArray
+  }
+
   def solve(): Unit = {
     bench("Total") {
       val service = Executors.newFixedThreadPool(30)
-      val count   = AtomicInteger()
+      val count = AtomicInteger()
 
-      val allWords = bench("Load words") {
-        String(
-          Files.readAllBytes(
-            Paths.get("resource/words_alpha.txt")),
-          StandardCharsets.UTF_8)
-          .linesIterator
-          .filter(e => Integer.bitCount(wordToCode(e)) == 5)
-          .filter(_.length == 5)
-          .toArray
-      }
 
       case class BitWord(word: String, bits: Int) {
         def overlapsWith(other: BitWord) = (other.bits & bits) != 0
@@ -55,9 +58,10 @@ object FiveLetterWords {
               var tail = wordPool
               while (tail.nonEmpty) {
                 val tailOn = tail
+
                 def fork() = {
                   val nextWord = tailOn.head
-                  val pool     = tailOn.filterNot(_.overlapsWith(nextWord))
+                  val pool = tailOn.filterNot(_.overlapsWith(nextWord))
                   WorkingSet(
                     nextWord :: words,
                     code | nextWord.bits,
@@ -86,10 +90,13 @@ object FiveLetterWords {
         }
 
         def currentSolution = words.reverse.map(_.word)
+
         override def toString = s"WorkingSet($stepsLeft, $currentSolution)"
       }
 
-      val words = bench("Bit fun") {allWords.map(w => BitWord(w, wordToCode(w)))}
+      val words = bench("Bit fun") {
+        allWords.map(w => BitWord(w, wordToCode(w)))
+      }
 
       WorkingSet(
         Nil,
